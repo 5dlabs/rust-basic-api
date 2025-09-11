@@ -1,0 +1,82 @@
+<prompt>
+    <role>You are a senior Rust developer specializing in web API development with Axum, PostgreSQL, and containerization.</role>
+    <task>
+        <id>1</id>
+        <title>Project Setup and Configuration</title>
+        <description>Initialize the Rust project with Cargo, set up the project structure, and configure dependencies</description>
+        <priority>high</priority>
+        <status>pending</status>
+        <dependencies>None</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Create new Rust binary project using cargo new rust-basic-api --bin</spec>
+        <spec>Configure Cargo.toml with axum 0.6+, tokio, serde, sqlx, tracing, dotenv, anyhow, thiserror</spec>
+        <spec>Implement modular project structure with separate modules for config, error, models, routes, repository</spec>
+        <spec>Create Config struct that loads DATABASE_URL and SERVER_PORT from environment</spec>
+        <spec>Set up Axum web server with health check endpoint at /health</spec>
+        <spec>Initialize tracing/logging with configurable log levels via RUST_LOG</spec>
+        <spec>Create multi-stage Dockerfile for optimized production builds</spec>
+        <spec>Configure docker-compose.yml with API and PostgreSQL services</spec>
+        <spec>Server must bind to 0.0.0.0 for container compatibility</spec>
+        <spec>Use anyhow::Result for main function error handling</spec>
+    </technical_specifications>
+    <implementation_details>
+        Create a new Rust project and configure all required dependencies in Cargo.toml. The project should use axum as the web framework with tokio as the async runtime. Include serde for serialization, sqlx for database access with PostgreSQL support, tracing for logging, dotenv for environment configuration, and anyhow/thiserror for error handling.
+
+        Set up the following directory structure:
+        - src/main.rs: Application entry point with server initialization
+        - src/config.rs: Configuration management with Config struct
+        - src/error.rs: Error type definitions
+        - src/models/: Data model definitions
+        - src/routes/: HTTP route handlers
+        - src/repository/: Database access layer
+
+        The config module should define a Config struct with database_url and server_port fields, loading values from environment variables using dotenv. Provide a default port of 3000 if SERVER_PORT is not set.
+
+        In main.rs, initialize tracing with environment-based log levels, load configuration, create an Axum router with a /health endpoint returning "OK", and start the server on the configured port.
+
+        Create a multi-stage Dockerfile that:
+        1. Uses rust:1.70 as builder stage
+        2. Implements dependency caching by building empty project first
+        3. Copies actual source and rebuilds
+        4. Uses debian:bookworm-slim for final stage
+        5. Copies only the compiled binary
+
+        Configure docker-compose.yml with:
+        - API service building from Dockerfile
+        - PostgreSQL 15 database service
+        - Proper environment variables
+        - Network configuration for service communication
+        - Volume for PostgreSQL data persistence
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>Project builds successfully with cargo build</criterion>
+        <criterion>Server starts and binds to configured port</criterion>
+        <criterion>Health endpoint at /health returns "OK" response</criterion>
+        <criterion>Environment variables are loaded correctly from .env file</criterion>
+        <criterion>Docker image builds successfully with multi-stage optimization</criterion>
+        <criterion>docker-compose up starts both API and database services</criterion>
+        <criterion>Logging works with configurable levels via RUST_LOG</criterion>
+        <criterion>All required dependencies are specified in Cargo.toml</criterion>
+        <criterion>Project structure follows Rust conventions</criterion>
+        <criterion>No compilation warnings or clippy issues</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+        Test the implementation by:
+        1. Running cargo build to verify compilation
+        2. Starting the server with cargo run and testing the health endpoint with curl http://localhost:3000/health
+        3. Verifying environment variable loading by setting custom SERVER_PORT
+        4. Building Docker image and verifying it runs correctly
+        5. Running docker-compose up and testing service connectivity
+        6. Checking that different log levels work with RUST_LOG environment variable
+        7. Ensuring PostgreSQL service is accessible from API container
+        8. Verifying that the application handles missing DATABASE_URL with appropriate error
+    </test_strategy>
+    <instructions>
+        Think step-by-step about the implementation approach. Start by creating the project structure, then implement each module systematically. Consider the existing codebase structure and patterns (this is the first task, establishing patterns for future tasks).
+        
+        Provide complete, production-ready code that follows Rust best practices. Include necessary imports, proper error handling using Result types, and comprehensive logging. Ensure all code is properly formatted and passes clippy checks.
+        
+        Focus on creating a solid foundation that subsequent tasks can build upon. The configuration and error handling patterns established here will be used throughout the project. Test your solution thoroughly before finalizing, ensuring all endpoints work and containers can communicate properly.
+    </instructions>
+</prompt>

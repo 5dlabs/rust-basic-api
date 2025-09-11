@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt>
+    <role>You are a senior Rust developer specializing in backend API development with SQLx and PostgreSQL.</role>
+    <task>
+        <id>4</id>
+        <title>User Repository Implementation</title>
+        <description>Implement the UserRepository trait and SQLx-based implementation for database operations, providing a clean abstraction layer between business logic and database access.</description>
+        <priority>high</priority>
+        <status>pending</status>
+        <dependencies>2,3</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Create UserRepository trait with async CRUD methods using async-trait</spec>
+        <spec>Implement SqlxUserRepository with PgPool for connection management</spec>
+        <spec>Use SQLx query_as! macro for compile-time SQL verification</spec>
+        <spec>Support partial updates with dynamic query building</spec>
+        <spec>Map SQLx errors to application-specific ApiError types</spec>
+        <spec>Implement proper transaction support and isolation</spec>
+        <spec>Use RETURNING clauses for immediate feedback on mutations</spec>
+        <spec>Ensure all queries are parameterized to prevent SQL injection</spec>
+    </technical_specifications>
+    <implementation_details>
+        Create src/repository/user_repository.rs with the following structure:
+        
+        1. Define UserRepository trait:
+        - create_user(req: CreateUserRequest) -> Result&lt;User&gt;
+        - get_user(id: i32) -> Result&lt;Option&lt;User&gt;&gt;
+        - get_users() -> Result&lt;Vec&lt;User&gt;&gt;
+        - update_user(id: i32, req: UpdateUserRequest) -> Result&lt;Option&lt;User&gt;&gt;
+        - delete_user(id: i32) -> Result&lt;bool&gt;
+        
+        2. Implement SqlxUserRepository:
+        - Store PgPool for database connections
+        - Use query_as! for type-safe queries
+        - Build dynamic UPDATE queries for partial updates
+        - Handle database errors with proper mapping
+        
+        3. Create comprehensive integration tests:
+        - Test all CRUD operations
+        - Verify transaction boundaries
+        - Test concurrent operations
+        - Handle error scenarios
+        
+        4. Update module exports in src/repository/mod.rs
+        
+        5. Add async-trait dependency to Cargo.toml
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>UserRepository trait properly defined with all CRUD methods</criterion>
+        <criterion>SqlxUserRepository fully implements the trait with SQLx</criterion>
+        <criterion>All database operations use parameterized queries</criterion>
+        <criterion>Partial updates only modify provided fields</criterion>
+        <criterion>Comprehensive error handling with ApiError mapping</criterion>
+        <criterion>Integration tests cover all operations and edge cases</criterion>
+        <criterion>Transaction support verified with rollback testing</criterion>
+        <criterion>Code compiles without warnings and passes all tests</criterion>
+        <criterion>SQLx compile-time verification enabled and working</criterion>
+        <criterion>Proper connection pooling with PgPool</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+        Integration Testing Approach:
+        
+        1. Setup test database utility for isolated testing
+        2. Create tests for each CRUD operation:
+           - test_create_user: Verify user creation with all fields
+           - test_get_user: Test retrieval of existing and non-existent users
+           - test_get_users: Verify listing all users with proper ordering
+           - test_update_user: Test partial updates preserving unchanged fields
+           - test_delete_user: Verify deletion and return values
+        
+        3. Transaction testing:
+           - test_with_transaction: Verify rollback behavior
+           - Test concurrent operations for race conditions
+           - Verify isolation levels
+        
+        4. Error scenario testing:
+           - Duplicate email constraint violations
+           - Invalid ID lookups
+           - Connection failures
+           - Query timeouts
+        
+        5. Performance testing:
+           - Measure query execution times
+           - Verify connection pool efficiency
+           - Test under concurrent load
+        
+        Use #[sqlx::test] attribute for automatic test database management
+    </test_strategy>
+    <instructions>
+        Think step-by-step about the implementation approach. Consider the existing codebase structure and patterns.
+        
+        Start by reviewing the existing models in Task 3 and database setup from Task 2. Ensure your repository implementation aligns with these existing components.
+        
+        Focus on creating a clean abstraction that separates database concerns from business logic. Use Rust's type system to enforce correctness at compile time.
+        
+        Implement comprehensive error handling that provides meaningful feedback while maintaining security. Never expose internal database details in error messages.
+        
+        Write the integration tests alongside the implementation to ensure all functionality works correctly. Use SQLx's test utilities for proper database isolation.
+        
+        Provide complete, production-ready code that follows Rust best practices. Include necessary imports, proper error handling, and clear documentation.
+        
+        Ensure the implementation is efficient, secure, and maintainable. Consider future enhancements like pagination and filtering, but don't over-engineer the initial implementation.
+        
+        Test your solution thoroughly before finalizing, verifying all CRUD operations work correctly and handle edge cases appropriately.
+    </instructions>
+</prompt>

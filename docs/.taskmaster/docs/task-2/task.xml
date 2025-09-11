@@ -1,0 +1,92 @@
+<prompt>
+    <role>You are a senior Rust developer specializing in PostgreSQL database integration, SQLx migrations, and connection pool management.</role>
+    <task>
+        <id>2</id>
+        <title>Database Schema and Migrations</title>
+        <description>Set up the PostgreSQL database schema with migrations using SQLx</description>
+        <priority>high</priority>
+        <status>pending</status>
+        <dependencies>1</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Create migrations directory with initial schema migration file</spec>
+        <spec>Define users table with id (SERIAL PRIMARY KEY), name (VARCHAR 255), email (VARCHAR 255 UNIQUE), created_at and updated_at timestamps</spec>
+        <spec>Add performance indexes on email and created_at (descending) columns</spec>
+        <spec>Implement connection pool with PgPoolOptions (10 max connections, 3 second timeout)</spec>
+        <spec>Integrate SQLx migrations to run automatically on application startup</spec>
+        <spec>Add database pool to application state for sharing across handlers</spec>
+        <spec>Create test utilities with setup_test_database and transaction helpers</spec>
+        <spec>Update health check endpoint to verify database connectivity</spec>
+        <spec>Configure separate test database via .env.test file</spec>
+        <spec>Ensure compile-time SQL verification with SQLx macros</spec>
+    </technical_specifications>
+    <implementation_details>
+        Create a migrations directory in the project root and add the initial migration file at migrations/001_initial_schema.sql. The migration should create the users table with appropriate data types and constraints.
+
+        The users table schema must include:
+        - id: SERIAL PRIMARY KEY for auto-incrementing unique identifier
+        - name: VARCHAR(255) NOT NULL for user's display name
+        - email: VARCHAR(255) UNIQUE NOT NULL for unique email addresses
+        - created_at: TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        - updated_at: TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+
+        Add two performance indexes:
+        - idx_users_email on the email column for fast lookups
+        - idx_users_created_at on created_at DESC for chronological queries
+
+        In src/repository/mod.rs, implement the create_pool function using PgPoolOptions to configure connection pooling with 10 maximum connections and a 3-second acquire timeout. This provides optimal performance while preventing connection exhaustion.
+
+        Update src/main.rs to:
+        1. Create the database pool using the configured DATABASE_URL
+        2. Run migrations automatically using sqlx::migrate!().run(&pool)
+        3. Define an AppState struct containing the PgPool
+        4. Share the state with all routes using .with_state()
+        5. Add appropriate logging for migration status
+
+        Create src/repository/test_utils.rs with testing utilities:
+        - setup_test_database(): Initializes a test database with migrations
+        - transaction(): Provides transactional test isolation
+        - Use std::sync::Once to ensure one-time initialization
+        - Load configuration from .env.test for test separation
+
+        Enhance the health check endpoint to query the database with SELECT 1 and return:
+        - 200 OK when database is accessible
+        - 503 Service Unavailable when database connection fails
+
+        The implementation should handle all database errors gracefully, provide meaningful logging, and ensure that migration failures prevent application startup to maintain data integrity.
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>Migrations directory exists with 001_initial_schema.sql file</criterion>
+        <criterion>Users table created with all required columns and constraints</criterion>
+        <criterion>Indexes created on email and created_at columns</criterion>
+        <criterion>Connection pool configured with specified parameters</criterion>
+        <criterion>Migrations run automatically on application startup</criterion>
+        <criterion>Database pool integrated into application state</criterion>
+        <criterion>Test utilities provide proper database isolation</criterion>
+        <criterion>Health check verifies database connectivity</criterion>
+        <criterion>Separate test database configuration via .env.test</criterion>
+        <criterion>All database operations use async/await properly</criterion>
+        <criterion>SQLx compile-time verification passes</criterion>
+        <criterion>Proper error handling and logging throughout</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+        Test the implementation by:
+        1. Running sqlx migrate run and verifying successful execution
+        2. Checking database schema with psql \d users command
+        3. Verifying indexes exist with \di *users* command
+        4. Starting the application and checking for "Database migrations completed" log
+        5. Testing health endpoint returns OK with database running
+        6. Stopping database and verifying health check returns 503
+        7. Running cargo test with test database to verify isolation
+        8. Testing connection pool limits by acquiring maximum connections
+        9. Verifying migration rollback with sqlx migrate revert
+        10. Checking that duplicate migration runs are idempotent
+    </test_strategy>
+    <instructions>
+        Think step-by-step about the database setup process. Start by creating the migrations infrastructure, then implement the schema, followed by connection pooling and application integration.
+        
+        Provide complete, production-ready code that follows SQLx best practices. Include proper error handling, use Result types consistently, and add comprehensive logging for debugging. Ensure all SQL queries are validated at compile time using SQLx macros.
+        
+        Pay special attention to test isolation and ensure that test utilities don't affect production data. The connection pool configuration should balance performance with resource constraints. Test your solution thoroughly, verifying both success and failure scenarios.
+    </instructions>
+</prompt>

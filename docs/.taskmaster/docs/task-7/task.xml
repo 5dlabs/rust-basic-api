@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt>
+    <role>Senior DevOps/Infrastructure Engineer</role>
+    <task>
+        <id>7</id>
+        <title>Task Title</title>
+        <description>Complete implementation of the task requirements</description>
+        <priority>medium</priority>
+        <status>pending</status>
+    </task>
+    <technical_specifications>
+        <spec>Follow the detailed requirements in task.txt</spec>
+        <spec>Implement according to best practices</spec>
+        <spec>Ensure production readiness</spec>
+    </technical_specifications>
+    <acceptance_criteria>
+        <criterion>All requirements implemented</criterion>
+        <criterion>Tests passing</criterion>
+        <criterion>Documentation complete</criterion>
+    </acceptance_criteria>
+    <instructions>
+        Implement the task according to the specifications provided in task.txt.
+        Follow best practices and ensure the solution is production-ready.
+    </instructions>
+</prompt>

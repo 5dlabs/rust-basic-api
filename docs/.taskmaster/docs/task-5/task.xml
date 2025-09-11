@@ -1,0 +1,120 @@
+<prompt>
+    <role>You are a senior Rust backend developer specializing in Axum web framework and RESTful API design.</role>
+    <task>
+        <id>5</id>
+        <title>API Route Handlers Implementation</title>
+        <description>Implement comprehensive API route handlers for all user endpoints using Axum framework. Create a clean RESTful interface that bridges HTTP requests to the repository layer, providing full CRUD operations for user management.</description>
+        <priority>high</priority>
+        <status>pending</status>
+        <dependencies>4</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Implement five route handlers: get_users, get_user, create_user, update_user, delete_user</spec>
+        <spec>Use Axum extractors for path parameters, JSON bodies, and shared state</spec>
+        <spec>Integrate with existing validation module for request validation</spec>
+        <spec>Return appropriate HTTP status codes (200, 201, 204, 400, 404, 500)</spec>
+        <spec>Configure router with all endpoints and HTTP methods</spec>
+        <spec>Add tower-http middleware for request tracing</spec>
+        <spec>Implement health check endpoint returning "OK"</spec>
+        <spec>Ensure proper error mapping from repository to HTTP responses</spec>
+    </technical_specifications>
+    <implementation_details>
+1. Create src/routes/user_routes.rs with handler functions:
+   - get_users: List all users, return JSON array
+   - get_user: Get single user by ID, return 404 if not found
+   - create_user: Create new user, validate input, return 201
+   - update_user: Partial update, validate input, return updated user
+   - delete_user: Remove user, return 204 on success
+
+2. Handler implementation pattern:
+   - Extract required data using Axum extractors
+   - Create repository instance with shared PgPool
+   - Call repository method
+   - Map results to appropriate HTTP responses
+   - Handle errors with proper status codes
+
+3. Module organization (src/routes/mod.rs):
+   - Export all user route handlers
+   - Implement health_check function
+   - Keep module structure clean and organized
+
+4. Router configuration in main.rs:
+   - Configure all routes with correct HTTP methods
+   - Add TraceLayer middleware for logging
+   - Inject PgPool as shared state
+   - Ensure proper route ordering
+
+5. Error handling strategy:
+   - Convert Option&lt;User&gt; to 404 Not Found
+   - Map validation errors to 400 Bad Request
+   - Let database errors become 500 Internal Server Error
+   - Return consistent error response format
+
+6. Testing approach:
+   - Create integration tests for all endpoints
+   - Test happy paths and error scenarios
+   - Use tower::ServiceExt for router testing
+   - Verify status codes and response bodies
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>All five CRUD endpoints fully functional</criterion>
+        <criterion>Health check endpoint returns "OK"</criterion>
+        <criterion>Correct HTTP status codes for all scenarios</criterion>
+        <criterion>Request validation enforced before processing</criterion>
+        <criterion>Proper error messages without sensitive information</criterion>
+        <criterion>Integration tests cover all endpoints</criterion>
+        <criterion>Request tracing middleware enabled</criterion>
+        <criterion>Code compiles without warnings</criterion>
+        <criterion>Follows Axum best practices and patterns</criterion>
+        <criterion>Handles concurrent requests safely</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+Integration Testing Requirements:
+
+1. CRUD Operation Tests:
+   - test_create_user: POST with valid data returns 201
+   - test_get_user: GET existing user returns 200
+   - test_get_users: GET all users returns array
+   - test_update_user: PUT with partial data returns 200
+   - test_delete_user: DELETE returns 204
+
+2. Error Scenario Tests:
+   - test_validation_errors: Invalid data returns 400
+   - test_not_found: Non-existent ID returns 404
+   - test_missing_fields: Missing required fields returns 400
+
+3. Concurrent Operation Tests:
+   - Multiple simultaneous creates handle correctly
+   - Concurrent updates maintain consistency
+   - No race conditions or deadlocks
+
+4. Performance Tests:
+   - Response times under 100ms for standard operations
+   - Handle 100+ concurrent requests
+   - Efficient database connection usage
+
+5. Test Utilities:
+   - setup_router() creates test router with test database
+   - Use hyper::body for request/response handling
+   - Deserialize responses to verify content
+    </test_strategy>
+    <instructions>
+        Think step-by-step about the implementation approach. Consider the existing codebase structure and patterns.
+        
+        Start by reviewing the repository implementation from Task 4 and models from Task 3. Ensure your handlers properly integrate with these existing components.
+        
+        Focus on creating clean, idiomatic Axum handlers that follow RESTful conventions. Use proper extractors and return types that Axum expects.
+        
+        Implement comprehensive error handling that provides meaningful feedback while maintaining security. Map repository results to appropriate HTTP responses.
+        
+        Configure the router properly with all routes, ensuring correct HTTP methods and middleware ordering. The TraceLayer should provide observability without impacting performance.
+        
+        Write integration tests alongside the implementation to verify all functionality works correctly. Test both success and failure scenarios thoroughly.
+        
+        Provide complete, production-ready code that follows Rust and Axum best practices. Include necessary imports, proper error handling, and clear documentation.
+        
+        Ensure the implementation is performant, secure, and maintainable. The handlers should be thin controllers that delegate business logic to the repository layer.
+        
+        Test your solution thoroughly before finalizing, verifying all endpoints work correctly with proper status codes and response formats.
+    </instructions>
+</prompt>

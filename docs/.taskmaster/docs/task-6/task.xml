@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<prompt>
+    <role>You are a senior DevOps engineer specializing in Rust testing frameworks, CI/CD pipelines, and automated testing infrastructure.</role>
+    <task>
+        <id>6</id>
+        <title>Comprehensive Testing Setup</title>
+        <description>Set up a comprehensive testing framework including unit tests, integration tests, test utilities, CI/CD pipeline, and code coverage reporting for quality assurance.</description>
+        <priority>medium</priority>
+        <status>pending</status>
+        <dependencies>5</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Create test utilities module with factory functions for test data generation</spec>
+        <spec>Configure separate test environment with .env.test file</spec>
+        <spec>Automate test database setup with PostgreSQL container management</spec>
+        <spec>Integrate tarpaulin for code coverage reporting with HTML output</spec>
+        <spec>Create bash scripts for database setup and test execution</spec>
+        <spec>Configure GitHub Actions CI/CD pipeline with caching and quality checks</spec>
+        <spec>Set up test isolation with transactions and rollback</spec>
+        <spec>Establish coverage targets: 80% line, 70% branch, 90% function</spec>
+    </technical_specifications>
+    <implementation_details>
+        Create comprehensive testing infrastructure:
+        
+        1. Test Utilities Module (src/test_utils.rs):
+        - Factory function create_test_user(id) for User generation
+        - Test fixtures with proper timestamps
+        - Common test helpers and assertions
+        - Mark with #[cfg(test)] attribute
+        
+        2. Test Environment Configuration (.env.test):
+        - DATABASE_URL=postgresql://postgres:password@localhost:5432/rust_api_test
+        - RUST_LOG=debug for test diagnostics
+        - Separate from development database
+        
+        3. Database Setup Script (scripts/setup_test_db.sh):
+        - Check and start PostgreSQL container if needed
+        - Create test database idempotently
+        - Wait for database readiness
+        - Handle container lifecycle
+        
+        4. Test Execution Script (scripts/run_tests.sh):
+        - Call setup_test_db.sh for environment preparation
+        - Run cargo tarpaulin with HTML output
+        - Generate coverage report in ./coverage directory
+        - Display completion message
+        
+        5. CI/CD Pipeline (.github/workflows/ci.yml):
+        - Trigger on push and pull_request to main
+        - Set up PostgreSQL service container
+        - Install Rust toolchain with rustfmt and clippy
+        - Cache dependencies using Cargo.lock hash
+        - Install SQLx CLI and run migrations
+        - Execute format check, linting, and tests
+        
+        6. Coverage Configuration:
+        - Add tarpaulin = "0.25" to dev-dependencies
+        - Generate HTML reports for visualization
+        - Set minimum coverage thresholds
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>Test utilities module created with factory functions</criterion>
+        <criterion>Test environment configuration separate from development</criterion>
+        <criterion>Database setup script automates PostgreSQL container</criterion>
+        <criterion>Coverage reporting generates HTML reports</criterion>
+        <criterion>Test execution script combines all test operations</criterion>
+        <criterion>CI/CD pipeline runs on GitHub Actions successfully</criterion>
+        <criterion>All existing tests continue to pass</criterion>
+        <criterion>Scripts are executable with proper permissions</criterion>
+        <criterion>Coverage meets minimum threshold targets</criterion>
+        <criterion>Tests run in isolation with proper cleanup</criterion>
+        <criterion>README updated with testing instructions</criterion>
+        <criterion>CI pipeline completes in under 5 minutes</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+        Testing Framework Validation:
+        
+        1. Test Utility Validation:
+           - Verify create_test_user generates valid User objects
+           - Test fixture timestamps are properly set
+           - Utilities are reusable across test suites
+        
+        2. Script Testing:
+           - Run setup_test_db.sh and verify container starts
+           - Check database is accessible and migrations run
+           - Execute run_tests.sh and verify coverage generation
+           - Test idempotency of database setup
+        
+        3. CI/CD Validation:
+           - Push to feature branch to trigger workflow
+           - Verify all workflow steps execute successfully
+           - Check dependency caching works
+           - Ensure quality checks (fmt, clippy) run
+        
+        4. Coverage Validation:
+           - Generate coverage report locally
+           - View HTML report in browser
+           - Verify coverage metrics are accurate
+           - Check exclusions are applied correctly
+        
+        5. Environment Isolation:
+           - Run tests with test database
+           - Verify no impact on development database
+           - Check test data cleanup after runs
+           - Validate transaction rollback works
+        
+        Manual validation checklist:
+        - ./scripts/setup_test_db.sh runs successfully
+        - cargo test passes all tests
+        - ./scripts/run_tests.sh generates coverage
+        - Coverage report viewable at ./coverage/tarpaulin-report.html
+        - GitHub Actions workflow succeeds
+    </test_strategy>
+    <instructions>
+        Think step-by-step about building a comprehensive testing infrastructure. Consider the existing codebase and its testing needs.
+        
+        Start by creating the test utilities module that will be used across all test suites. Design factory functions that generate consistent, valid test data.
+        
+        Set up the test environment configuration to ensure complete isolation from development and production databases. Use environment variables for all configuration.
+        
+        Create robust bash scripts that handle all edge cases - container already running, database already exists, network issues, etc. Make scripts idempotent so they can be run repeatedly.
+        
+        Design the CI/CD pipeline to be fast and reliable. Use caching effectively, run checks in parallel where possible, and provide clear failure messages.
+        
+        Configure code coverage to provide actionable insights. Set realistic thresholds that encourage good testing practices without being overly restrictive.
+        
+        Write clear documentation for all scripts and configurations. Other developers should be able to understand and run the tests without assistance.
+        
+        Test the entire setup thoroughly - run scripts multiple times, trigger CI pipeline with various scenarios, verify coverage reports are accurate.
+        
+        Ensure the testing framework scales with the project - it should handle more tests, more complex scenarios, and parallel execution as the codebase grows.
+    </instructions>
+</prompt>

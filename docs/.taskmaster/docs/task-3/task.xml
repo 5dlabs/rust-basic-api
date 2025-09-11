@@ -1,0 +1,93 @@
+<prompt>
+    <role>You are a senior Rust developer specializing in type-safe web API development with strong error handling practices and data modeling expertise.</role>
+    <task>
+        <id>3</id>
+        <title>Data Models and Error Handling</title>
+        <description>Implement comprehensive data modeling system and error handling framework for the REST API</description>
+        <priority>high</priority>
+        <status>pending</status>
+        <dependencies>1</dependencies>
+    </task>
+    <technical_specifications>
+        <spec>Add validator crate with derive features to Cargo.toml</spec>
+        <spec>Create User struct with id (i32), name (String), email (String), created_at, updated_at (DateTime&lt;Utc&gt;)</spec>
+        <spec>Implement CreateUserRequest with name length validation (1-255 chars) and email format validation</spec>
+        <spec>Implement UpdateUserRequest with optional fields and conditional validation</spec>
+        <spec>Create ApiError enum with Validation, Database, NotFound, and InternalServerError variants</spec>
+        <spec>Implement IntoResponse trait for ApiError with proper HTTP status code mapping</spec>
+        <spec>Create ErrorResponse struct with error code and message fields for JSON responses</spec>
+        <spec>Implement validate_request function that converts ValidationErrors to ApiError</spec>
+        <spec>Add comprehensive logging for database errors without exposing details to clients</spec>
+        <spec>Create Result&lt;T&gt; type alias using ApiError as error type</spec>
+    </technical_specifications>
+    <implementation_details>
+        Update Cargo.toml to include the validator crate with derive features for input validation. Create a comprehensive User model in src/models/user.rs that includes all required fields with proper serde serialization support.
+
+        The User struct should include:
+        - id: i32 for primary key
+        - name: String for user name
+        - email: String for user email address
+        - created_at: DateTime&lt;Utc&gt; for creation timestamp
+        - updated_at: DateTime&lt;Utc&gt; for last update timestamp
+
+        Implement request DTOs:
+        - CreateUserRequest with validation constraints (name length 1-255, valid email format)
+        - UpdateUserRequest with optional fields for partial updates
+
+        Create a robust error handling system in src/error.rs:
+        - Define ApiError enum with variants for different error types
+        - Implement automatic conversion from sqlx::Error to ApiError::Database
+        - Map error types to appropriate HTTP status codes (400 for validation, 404 for not found, 500 for internal)
+        - Create structured JSON error responses with consistent format
+        - Ensure database error details are logged but never exposed to clients
+
+        Implement validation utilities in src/models/validation.rs:
+        - Create validate_request function that works with any Validate type
+        - Convert ValidationErrors to formatted error messages
+        - Handle multiple validation failures with clear, actionable messages
+
+        Add comprehensive unit tests covering:
+        - Model serialization/deserialization
+        - Validation with valid and invalid inputs
+        - Error response HTTP status mapping
+        - Error message formatting
+
+        All validation error messages should be clear and actionable for API consumers. Database errors should be logged with appropriate context but abstracted from client responses for security.
+    </implementation_details>
+    <acceptance_criteria>
+        <criterion>Cargo.toml includes validator dependency with derive features</criterion>
+        <criterion>User model supports full serialization/deserialization cycle</criterion>
+        <criterion>CreateUserRequest validates name length (1-255 chars) and email format</criterion>
+        <criterion>UpdateUserRequest handles optional fields with conditional validation</criterion>
+        <criterion>ApiError enum covers all error scenarios with proper HTTP mapping</criterion>
+        <criterion>Error responses provide structured JSON with error codes and messages</criterion>
+        <criterion>Database errors are logged but never exposed to clients</criterion>
+        <criterion>Validation errors include helpful, actionable messages</criterion>
+        <criterion>All error types implement IntoResponse trait correctly</criterion>
+        <criterion>validate_request function works with any validatable type</criterion>
+        <criterion>Comprehensive test coverage for models, validation, and error handling</criterion>
+        <criterion>No compilation warnings or clippy issues</criterion>
+    </acceptance_criteria>
+    <test_strategy>
+        Test the implementation by:
+        1. Verifying User model serialization round-trip with serde_json
+        2. Testing CreateUserRequest validation with valid data (name: "John Doe", email: "john@example.com")
+        3. Testing validation failures for empty names, invalid emails, and oversized names
+        4. Verifying UpdateUserRequest handles optional fields correctly
+        5. Testing error response HTTP status codes match expected values (400, 404, 500)
+        6. Confirming error response JSON structure includes error and message fields
+        7. Verifying database errors are logged without client exposure
+        8. Testing validate_request function with various validation scenarios
+        9. Running cargo test to ensure all unit tests pass
+        10. Using cargo clippy to verify code quality standards
+    </test_strategy>
+    <instructions>
+        Think step-by-step about implementing a comprehensive data modeling and error handling system. Start with the User model and request DTOs, ensuring proper validation constraints. Then create a robust error handling framework that provides excellent developer experience while maintaining security.
+
+        Focus on type safety and leverage Rust's ownership system to prevent runtime errors. Design error handling patterns that will scale across the entire application. Ensure validation provides clear feedback to API consumers while protecting internal system details.
+
+        Write comprehensive tests that cover both happy path and error scenarios. Pay special attention to edge cases in validation and error handling. Create patterns that other developers can easily follow and extend.
+
+        The error handling system should be both comprehensive and performant, avoiding unnecessary allocations in error paths. Consider how this foundation will support future features like authentication, authorization, and additional data models.
+    </instructions>
+</prompt>
