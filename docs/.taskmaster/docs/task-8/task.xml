@@ -1,25 +1,148 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <prompt>
-    <role>Senior DevOps/Infrastructure Engineer</role>
+    <role>You are a senior software engineer specializing in API documentation, developer experience, and observability for Rust applications.</role>
     <task>
         <id>8</id>
-        <title>Task Title</title>
-        <description>Complete implementation of the task requirements</description>
+        <title>API Documentation and Developer Experience</title>
+        <description>Implement API documentation using OpenAPI/Swagger, enhance logging with structured JSON output, and improve developer experience with hot reload and environment configuration. Create comprehensive documentation that makes the API self-documenting and easy to explore.</description>
         <priority>medium</priority>
         <status>pending</status>
+        <dependencies>5</dependencies>
     </task>
     <technical_specifications>
-        <spec>Follow the detailed requirements in task.txt</spec>
-        <spec>Implement according to best practices</spec>
-        <spec>Ensure production readiness</spec>
+        <spec>Add utoipa and utoipa-swagger-ui for OpenAPI documentation</spec>
+        <spec>Create documentation module with OpenAPI specification</spec>
+        <spec>Annotate all models with ToSchema derive and examples</spec>
+        <spec>Document all route handlers with utoipa::path macro</spec>
+        <spec>Integrate Swagger UI at /swagger-ui endpoint</spec>
+        <spec>Implement structured JSON logging with tracing-bunyan-formatter</spec>
+        <spec>Create hot reload development script with cargo-watch</spec>
+        <spec>Configure environment variables with .env.example template</spec>
     </technical_specifications>
+    <implementation_details>
+1. OpenAPI Documentation Setup:
+   - Add utoipa dependencies with axum feature
+   - Create src/docs.rs with ApiDoc struct
+   - Define OpenAPI metadata (title, version, description)
+   - Configure server URLs for different environments
+   - Define tags for endpoint grouping
+
+2. Model Annotations:
+   - Add ToSchema derive to all models
+   - Provide realistic example values
+   - Include field descriptions
+   - Specify format constraints (email, date-time)
+   - Document validation rules
+
+3. Route Documentation:
+   - Annotate each handler with utoipa::path
+   - Document all status codes
+   - Provide request/response schemas
+   - Include parameter descriptions
+   - Add security requirements
+
+4. Swagger UI Integration:
+   - Configure SwaggerUi in main.rs
+   - Serve at /swagger-ui path
+   - Expose OpenAPI JSON at /api-docs/openapi.json
+   - Enable try-it-out functionality
+   - Support multiple server environments
+
+5. Structured Logging:
+   - Create src/logging.rs module
+   - Implement Bunyan JSON formatter
+   - Configure tracing subscriber
+   - Support environment-based log levels
+   - Include correlation ID support
+
+6. Developer Experience:
+   - Create scripts/dev.sh for development
+   - Install and use cargo-watch
+   - Auto-start PostgreSQL with docker-compose
+   - Auto-run migrations
+   - Display helpful startup messages
+
+7. Environment Configuration:
+   - Create comprehensive .env.example
+   - Document all environment variables
+   - Provide sensible defaults
+   - Include production guidance
+   - Separate dev/prod configurations
+    </implementation_details>
     <acceptance_criteria>
-        <criterion>All requirements implemented</criterion>
-        <criterion>Tests passing</criterion>
-        <criterion>Documentation complete</criterion>
+        <criterion>Swagger UI accessible and fully functional at /swagger-ui</criterion>
+        <criterion>All API endpoints documented with descriptions and examples</criterion>
+        <criterion>Interactive API testing works through Swagger UI</criterion>
+        <criterion>JSON structured logs output in correct format</criterion>
+        <criterion>Hot reload detects file changes and restarts automatically</criterion>
+        <criterion>Environment variables properly loaded from .env file</criterion>
+        <criterion>Development script automates database and migration setup</criterion>
+        <criterion>All models have complete schema documentation</criterion>
+        <criterion>Error responses documented for all endpoints</criterion>
+        <criterion>No sensitive data exposed in logs or documentation</criterion>
     </acceptance_criteria>
+    <test_strategy>
+Documentation and Developer Experience Testing:
+
+1. Swagger UI Testing:
+   - Navigate to http://localhost:3000/swagger-ui
+   - Verify all endpoints listed
+   - Test "Try it out" for each endpoint
+   - Validate example requests work
+   - Check response schemas accurate
+
+2. Documentation Quality:
+   - Verify all fields have descriptions
+   - Check example values are realistic
+   - Ensure error responses documented
+   - Validate OpenAPI spec structure
+   - Test schema generation
+
+3. Logging Verification:
+   - Check JSON format output
+   - Test log level filtering
+   - Verify no sensitive data logged
+   - Measure performance impact
+   - Test correlation ID propagation
+
+4. Developer Workflow:
+   - Run ./scripts/dev.sh successfully
+   - Modify code and verify hot reload
+   - Test environment variable loading
+   - Verify database auto-connection
+   - Check migration execution
+
+5. Performance Testing:
+   - Swagger UI load time < 2 seconds
+   - Documentation generation < 100ms
+   - Logging overhead < 1ms
+   - Hot reload trigger < 1 second
+   - Build time acceptable
+
+Security validation:
+- No real user data in examples
+- No hardcoded credentials
+- Logs properly sanitized
+- Environment variables secure
+    </test_strategy>
     <instructions>
-        Implement the task according to the specifications provided in task.txt.
-        Follow best practices and ensure the solution is production-ready.
+        Think step-by-step about creating excellent API documentation and developer experience. Consider both the needs of API consumers and developers working on the project.
+        
+        Start by setting up the OpenAPI documentation infrastructure with utoipa. Create a well-organized documentation module that defines the API specification with complete metadata.
+        
+        Carefully annotate all models with schema information, providing helpful descriptions and realistic examples. Each field should be documented with its purpose and constraints.
+        
+        Document every API endpoint comprehensively, including all possible responses, error conditions, and examples. Make the documentation interactive and useful for testing.
+        
+        Configure Swagger UI to provide an excellent exploration experience. Users should be able to understand and test the API without external tools.
+        
+        Implement structured logging that provides valuable debugging information without compromising security. Use JSON format for easy parsing and analysis.
+        
+        Create developer tools that make working on the project a pleasure. The hot reload setup should be fast and reliable, with clear feedback on what's happening.
+        
+        Design the environment configuration to be self-documenting and secure. Provide clear examples without exposing sensitive information.
+        
+        Test everything thoroughly - the documentation should be accurate, the logging should be helpful, and the developer experience should be smooth.
+        
+        Remember that good documentation is a feature, not an afterthought. It should make the API self-explanatory and easy to integrate with.
     </instructions>
 </prompt>
