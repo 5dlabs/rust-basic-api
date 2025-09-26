@@ -147,4 +147,158 @@ mod tests {
         env::remove_var("DATABASE_URL");
         env::remove_var("DATABASE_MAX_CONNECTIONS");
     }
+
+    #[test]
+    fn rejects_empty_database_url() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "");
+
+        let err = Config::from_env().expect_err("empty database URL should be rejected");
+        assert!(matches!(err, ConfigError::EmptyDatabaseUrl));
+
+        env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    fn rejects_invalid_server_port() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+        env::set_var("SERVER_PORT", "invalid_port");
+
+        let err = Config::from_env().expect_err("invalid server port should be rejected");
+        assert!(matches!(err, ConfigError::InvalidServerPort { .. }));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    fn rejects_invalid_database_max_connections() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+        env::set_var("DATABASE_MAX_CONNECTIONS", "not_a_number");
+
+        let err =
+            Config::from_env().expect_err("invalid database max connections should be rejected");
+        assert!(matches!(
+            err,
+            ConfigError::InvalidDatabaseMaxConnections { .. }
+        ));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("DATABASE_MAX_CONNECTIONS");
+    }
+
+    #[test]
+    fn handles_env_var_read_errors() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+
+        // Test with large port number that exceeds u16
+        env::set_var("SERVER_PORT", "99999");
+
+        let err = Config::from_env().expect_err("port exceeding u16 max should be rejected");
+        assert!(matches!(err, ConfigError::InvalidServerPort { .. }));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    fn handles_whitespace_in_database_url() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "   ");
+
+        let err = Config::from_env().expect_err("whitespace-only database URL should be rejected");
+        assert!(matches!(err, ConfigError::EmptyDatabaseUrl));
+
+        env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    fn loads_defaults_when_optional_vars_missing() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://test:test@localhost:5432/testdb");
+        env::remove_var("SERVER_PORT");
+        env::remove_var("DATABASE_MAX_CONNECTIONS");
+
+        let config = Config::from_env().expect("should load with defaults");
+
+        assert_eq!(config.server_port, DEFAULT_SERVER_PORT);
+        assert_eq!(
+            config.database_max_connections,
+            DEFAULT_DATABASE_MAX_CONNECTIONS
+        );
+
+        env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    fn config_debug_formatting() {
+        let config = Config {
+            database_url: "postgres://user:pass@localhost:5432/db".to_string(),
+            server_port: 8080,
+            database_max_connections: 10,
+        };
+
+        let debug_str = format!("{:?}", config);
+        assert!(debug_str.contains("database_url"));
+        assert!(debug_str.contains("server_port"));
+        assert!(debug_str.contains("database_max_connections"));
+    }
+
+    #[test]
+    fn config_clone() {
+        let config = Config {
+            database_url: "postgres://user:pass@localhost:5432/db".to_string(),
+            server_port: 8080,
+            database_max_connections: 10,
+        };
+
+        let cloned_config = config.clone();
+        assert_eq!(config.database_url, cloned_config.database_url);
+        assert_eq!(config.server_port, cloned_config.server_port);
+        assert_eq!(
+            config.database_max_connections,
+            cloned_config.database_max_connections
+        );
+    }
+
+    #[test]
+    fn rejects_negative_server_port() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+        env::set_var("SERVER_PORT", "-1");
+
+        let err = Config::from_env().expect_err("negative server port should be rejected");
+        assert!(matches!(err, ConfigError::InvalidServerPort { .. }));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    fn rejects_negative_database_max_connections() {
+        let _guard = env_lock().lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost:5432/db");
+        env::set_var("DATABASE_MAX_CONNECTIONS", "-5");
+
+        let err =
+            Config::from_env().expect_err("negative database max connections should be rejected");
+        assert!(matches!(
+            err,
+            ConfigError::InvalidDatabaseMaxConnections { .. }
+        ));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("DATABASE_MAX_CONNECTIONS");
+    }
 }

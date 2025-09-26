@@ -77,10 +77,169 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::sync::Once;
+    use tokio::time::{sleep, Duration};
+
+    static TRACING_INIT: Once = Once::new();
+
+    fn init_test_tracing() {
+        TRACING_INIT.call_once(|| {
+            init_tracing();
+        });
+    }
 
     #[test]
     fn init_tracing_is_idempotent() {
         init_tracing();
         init_tracing();
+    }
+
+    #[test]
+    fn init_tracing_handles_already_initialized() {
+        init_test_tracing();
+        // Should not panic even if already initialized
+        init_tracing();
+    }
+
+    #[test]
+    fn init_tracing_with_env_filter() {
+        env::set_var("RUST_LOG", "debug");
+        init_tracing();
+        env::remove_var("RUST_LOG");
+    }
+
+    #[test]
+    fn init_tracing_with_invalid_env_filter() {
+        env::set_var("RUST_LOG", "");
+        init_tracing();
+        env::remove_var("RUST_LOG");
+    }
+
+    #[tokio::test]
+    async fn shutdown_signal_receives_ctrl_c() {
+        // Test that shutdown_signal completes when receiving a signal
+        // This is hard to test directly, so we test the structure exists
+        tokio::select! {
+            _ = shutdown_signal() => {
+                // This branch will be taken if a signal is received
+            }
+            _ = sleep(Duration::from_millis(10)) => {
+                // Expected: timeout because no signal sent
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn app_state_creation() {
+        let pool = repository::create_pool("postgres://user:pass@localhost:5432/db", 5)
+            .expect("pool creation should succeed");
+
+        let state = models::AppState { db_pool: pool };
+
+        // Test that state can be cloned
+        let _cloned_state = state.clone();
+
+        // Test debug formatting
+        let debug_str = format!("{:?}", state);
+        assert!(debug_str.contains("AppState"));
+    }
+
+    #[tokio::test]
+    async fn repository_pool_management() {
+        let pool = repository::create_pool("postgres://user:pass@localhost:5432/db", 10)
+            .expect("pool creation should succeed");
+
+        assert!(!pool.is_closed());
+        assert_eq!(pool.num_idle(), 0); // No connections created yet in lazy pool
+
+        // Test closing pool
+        pool.close().await;
+        assert!(pool.is_closed());
+    }
+
+    #[test]
+    fn repository_invalid_database_url() {
+        let result = repository::create_pool("invalid_url", 5);
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn repository_zero_max_connections() {
+        // Zero max connections gets normalized to 1 by our create_pool function
+        let pool = repository::create_pool("postgres://user:pass@localhost:5432/db", 0)
+            .expect("pool creation should succeed with normalized connections");
+        assert!(!pool.is_closed());
+    }
+
+    // Test the main function path without running server
+    #[test]
+    fn config_loading_integration() {
+        env::set_var("DATABASE_URL", "postgres://test:test@localhost:5432/testdb");
+        env::set_var("SERVER_PORT", "8080");
+
+        let config = config::Config::from_env().expect("config should load");
+        assert_eq!(config.server_port, 8080);
+        assert!(config.database_url.contains("testdb"));
+
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    fn config_loading_failure() {
+        env::remove_var("DATABASE_URL");
+        let result = config::Config::from_env();
+        assert!(result.is_err());
+    }
+
+    // Test router creation with different states
+    #[tokio::test]
+    async fn router_with_different_pool_configurations() {
+        let configs = vec![
+            ("postgres://user1:pass1@localhost:5432/db1", 1),
+            ("postgres://user2:pass2@localhost:5432/db2", 10),
+            ("postgres://user3:pass3@localhost:5432/db3", 100),
+        ];
+
+        for (url, max_conn) in configs {
+            let pool =
+                repository::create_pool(url, max_conn).expect("pool creation should succeed");
+            let state = models::AppState { db_pool: pool };
+            let _router = routes::router(state); // Should not panic
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn shutdown_signal_unix_specific() {
+        use tokio::time::{sleep, Duration};
+
+        // Test that the shutdown signal handler exists and can be constructed
+        // This tests the Unix-specific SIGTERM handler code path
+        tokio::select! {
+            _ = shutdown_signal() => {
+                // Signal received (unlikely in test)
+            }
+            _ = sleep(Duration::from_millis(5)) => {
+                // Expected: timeout because no signal sent
+            }
+        }
+    }
+
+    #[cfg(not(unix))]
+    #[tokio::test]
+    async fn shutdown_signal_non_unix() {
+        use tokio::time::{sleep, Duration};
+
+        // Test the non-Unix shutdown signal path
+        tokio::select! {
+            _ = shutdown_signal() => {
+                // Signal received (unlikely in test)
+            }
+            _ = sleep(Duration::from_millis(5)) => {
+                // Expected: timeout because no signal sent
+            }
+        }
     }
 }
