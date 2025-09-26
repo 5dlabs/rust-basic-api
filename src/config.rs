@@ -247,7 +247,7 @@ mod tests {
             database_max_connections: 10,
         };
 
-        let debug_str = format!("{:?}", config);
+        let debug_str = format!("{config:?}");
         assert!(debug_str.contains("database_url"));
         assert!(debug_str.contains("server_port"));
         assert!(debug_str.contains("database_max_connections"));

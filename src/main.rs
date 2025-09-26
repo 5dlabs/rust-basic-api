@@ -121,10 +121,10 @@ mod tests {
         // Test that shutdown_signal completes when receiving a signal
         // This is hard to test directly, so we test the structure exists
         tokio::select! {
-            _ = shutdown_signal() => {
+            () = shutdown_signal() => {
                 // This branch will be taken if a signal is received
             }
-            _ = sleep(Duration::from_millis(10)) => {
+            () = sleep(Duration::from_millis(10)) => {
                 // Expected: timeout because no signal sent
             }
         }
@@ -141,7 +141,7 @@ mod tests {
         let _cloned_state = state.clone();
 
         // Test debug formatting
-        let debug_str = format!("{:?}", state);
+        let debug_str = format!("{state:?}");
         assert!(debug_str.contains("AppState"));
     }
 
@@ -218,10 +218,10 @@ mod tests {
         // Test that the shutdown signal handler exists and can be constructed
         // This tests the Unix-specific SIGTERM handler code path
         tokio::select! {
-            _ = shutdown_signal() => {
+            () = shutdown_signal() => {
                 // Signal received (unlikely in test)
             }
-            _ = sleep(Duration::from_millis(5)) => {
+            () = sleep(Duration::from_millis(5)) => {
                 // Expected: timeout because no signal sent
             }
         }

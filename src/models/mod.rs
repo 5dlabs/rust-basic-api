@@ -31,7 +31,7 @@ mod tests {
             .expect("pool creation should succeed");
 
         let state = AppState { db_pool: pool };
-        let debug_str = format!("{:?}", state);
+        let debug_str = format!("{state:?}");
 
         assert!(debug_str.contains("AppState"));
         assert!(debug_str.contains("db_pool"));
