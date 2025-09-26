@@ -1,36 +1,26 @@
-use axum::{extract::State, routing::get, Json, Router};
-use serde::Serialize;
+use axum::{extract::State, routing::get, Router};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::AppState;
-
-#[derive(Debug, Serialize)]
-struct HealthResponse {
-    status: &'static str,
-    timestamp: u64,
-    port: u16,
-    pool_size: u32,
-}
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/health", get(handler))
 }
 
-async fn handler(State(state): State<AppState>) -> Json<HealthResponse> {
+async fn handler(State(state): State<AppState>) -> &'static str {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|duration| duration.as_secs())
         .unwrap_or_default();
 
-    let port = state.config().server_port;
-    let pool_size = state.database_pool().size();
+    tracing::debug!(
+        port = state.config().server_port,
+        pool_size = state.database_pool().size(),
+        ?timestamp,
+        "health check succeeded",
+    );
 
-    Json(HealthResponse {
-        status: "OK",
-        timestamp,
-        port,
-        pool_size,
-    })
+    "OK"
 }
 
 #[cfg(test)]
@@ -42,7 +32,7 @@ mod tests {
         http::{Request, StatusCode},
     };
     use hyper::body::to_bytes;
-    use std::{convert::TryFrom, net::IpAddr};
+    use std::net::IpAddr;
     use tower::ServiceExt as _;
 
     #[tokio::test]
@@ -73,23 +63,9 @@ mod tests {
 
         assert_eq!(response.status(), StatusCode::OK);
 
-        let bytes = to_bytes(response.into_body())
+        let body = to_bytes(response.into_body())
             .await
             .expect("body should read");
-        let payload: serde_json::Value = serde_json::from_slice(&bytes).expect("valid json");
-
-        assert_eq!(payload["status"], "OK");
-
-        let port_value = payload["port"].as_u64().expect("port should be number");
-        let port = u16::try_from(port_value).expect("port should fit into u16");
-        assert_eq!(port, state.config().server_port);
-
-        let pool_size_value = payload["pool_size"]
-            .as_u64()
-            .expect("pool_size should be number");
-        let pool_size = u32::try_from(pool_size_value).expect("pool_size should fit into u32");
-        assert_eq!(pool_size, state.database_pool().size());
-
-        assert!(payload["timestamp"].as_u64().expect("timestamp present") > 0);
+        assert_eq!(body.as_ref(), b"OK");
     }
 }
