@@ -18,6 +18,13 @@ pub(crate) struct AppState {
 }
 
 impl AppState {
+    pub(crate) fn new(config: Config, db_pool: DatabasePool) -> Self {
+        Self {
+            config: Arc::new(config),
+            db_pool,
+        }
+    }
+
     pub(crate) fn config(&self) -> &Config {
         &self.config
     }
@@ -33,10 +40,7 @@ async fn main() -> Result<()> {
     init_tracing(&config);
 
     let db_pool = repository::init_pool(&config.database_url, config.database_max_connections)?;
-    let state = AppState {
-        config: Arc::new(config),
-        db_pool,
-    };
+    let state = AppState::new(config, db_pool);
 
     let router = routes::create_router().with_state(state.clone());
 

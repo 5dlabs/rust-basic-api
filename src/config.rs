@@ -86,3 +86,142 @@ pub enum ConfigError {
         source: Box<dyn std::error::Error + Send + Sync>,
     },
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        net::{IpAddr, SocketAddr},
+        sync::{Mutex, OnceLock},
+    };
+
+    fn env_mutex() -> &'static Mutex<()> {
+        static ENV_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
+        ENV_MUTEX.get_or_init(|| Mutex::new(()))
+    }
+
+    fn with_env<R>(vars: &[(&str, Option<&str>)], test: impl FnOnce() -> R) -> R {
+        let guard = env_mutex().lock().expect("env mutex poisoned");
+
+        let snapshot: Vec<(String, Option<String>)> = vars
+            .iter()
+            .map(|(key, _)| ((*key).to_string(), env::var(key).ok()))
+            .collect();
+
+        for (key, value) in vars {
+            match value {
+                Some(val) => env::set_var(key, val),
+                None => env::remove_var(key),
+            }
+        }
+
+        let result = test();
+
+        for (key, value) in snapshot {
+            match value {
+                Some(val) => env::set_var(&key, val),
+                None => env::remove_var(&key),
+            }
+        }
+
+        drop(guard);
+        result
+    }
+
+    #[test]
+    fn from_env_reads_all_configured_values() {
+        with_env(
+            &[
+                (
+                    "DATABASE_URL",
+                    Some("postgresql://postgres:postgres@localhost:5432/test"),
+                ),
+                ("DATABASE_MAX_CONNECTIONS", Some("12")),
+                ("SERVER_HOST", Some("127.0.0.1")),
+                ("SERVER_PORT", Some("4000")),
+                ("RUST_LOG", Some("debug")),
+            ],
+            || {
+                let config = Config::from_env().expect("config should load");
+                assert_eq!(
+                    config.database_url,
+                    "postgresql://postgres:postgres@localhost:5432/test"
+                );
+                assert_eq!(config.database_max_connections, 12);
+                assert_eq!(config.server_host, IpAddr::from([127, 0, 0, 1]));
+                assert_eq!(config.server_port, 4000);
+                assert_eq!(config.rust_log, "debug");
+                assert_eq!(
+                    config.socket_addr(),
+                    SocketAddr::from(([127, 0, 0, 1], 4000))
+                );
+            },
+        );
+    }
+
+    #[test]
+    fn from_env_uses_defaults_for_optional_values() {
+        with_env(
+            &[
+                (
+                    "DATABASE_URL",
+                    Some("postgresql://postgres:postgres@localhost:5432/defaults"),
+                ),
+                ("DATABASE_MAX_CONNECTIONS", None),
+                ("SERVER_HOST", None),
+                ("SERVER_PORT", None),
+                ("RUST_LOG", None),
+            ],
+            || {
+                let config = Config::from_env().expect("config should load with defaults");
+                assert_eq!(config.database_max_connections, 5);
+                assert_eq!(config.server_host, IpAddr::from([0, 0, 0, 0]));
+                assert_eq!(config.server_port, 3000);
+                assert_eq!(config.rust_log, "info");
+            },
+        );
+    }
+
+    #[test]
+    fn from_env_requires_database_url() {
+        with_env(
+            &[
+                ("DATABASE_URL", None),
+                ("DATABASE_MAX_CONNECTIONS", None),
+                ("SERVER_HOST", None),
+                ("SERVER_PORT", None),
+                ("RUST_LOG", None),
+            ],
+            || {
+                let error = Config::from_env().expect_err("missing DATABASE_URL should error");
+                assert!(matches!(
+                    error,
+                    ConfigError::MissingEnv { ref var, .. } if var == "DATABASE_URL"
+                ));
+            },
+        );
+    }
+
+    #[test]
+    fn from_env_rejects_invalid_numbers() {
+        with_env(
+            &[
+                (
+                    "DATABASE_URL",
+                    Some("postgresql://postgres:postgres@localhost:5432/invalid"),
+                ),
+                ("SERVER_PORT", Some("not-a-number")),
+                ("DATABASE_MAX_CONNECTIONS", None),
+                ("SERVER_HOST", None),
+                ("RUST_LOG", None),
+            ],
+            || {
+                let error = Config::from_env().expect_err("invalid server port should error");
+                assert!(matches!(
+                    error,
+                    ConfigError::InvalidEnv { ref var, .. } if var == "SERVER_PORT"
+                ));
+            },
+        );
+    }
+}

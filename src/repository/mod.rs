@@ -8,3 +8,19 @@ pub fn init_pool(database_url: &str, max_connections: u32) -> Result<PgPool, sql
         .max_connections(max_connections)
         .connect_lazy(database_url)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn init_pool_respects_max_connections() {
+        let pool = init_pool(
+            "postgresql://postgres:postgres@localhost:5432/repository_test",
+            7,
+        )
+        .expect("pool should initialise");
+
+        assert_eq!(pool.size(), 0);
+    }
+}
