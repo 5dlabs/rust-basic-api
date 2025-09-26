@@ -22,3 +22,8 @@ target
 
 # Added by cargo
 /target
+
+# Project guidelines: ignore hook directories managed locally
+hooks/
+.hooks/
+**/hooks/

@@ -37,6 +37,12 @@ The API listens on `http://<SERVER_HOST>:<SERVER_PORT>`. Verify the health endpo
 curl http://localhost:3000/health
 ```
 
+Expected response (values will vary based on environment):
+
+```json
+{"status":"OK","timestamp":1700000000,"port":3000,"pool_size":5}
+```
+
 ### Quality Gates
 
 Run the required quality gates before opening a pull request:
