@@ -1,24 +1,13 @@
-FROM rust:1.77-bullseye AS builder
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+    ca-certificates libssl3 wget --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/* && apt-get clean
+RUN useradd -r -u 1000 -m -d /app -s /bin/bash app
 WORKDIR /app
-
-COPY Cargo.toml Cargo.lock ./
-RUN mkdir src
-RUN echo 'fn main() {}' > src/main.rs
-RUN cargo build --release
-
-COPY src ./src
-RUN cargo build --release
-
-FROM debian:bullseye-slim AS runtime
-WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install --no-install-recommends -y ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /app/target/release/rust-basic-api /usr/local/bin/rust-basic-api
-
-ENV RUST_LOG=${RUST_LOG:-info}
+COPY rust-basic-api /app/rust-basic-api
+RUN chmod +x /app/rust-basic-api && chown -R app:app /app
+USER app
 EXPOSE 3000
-
-CMD ["rust-basic-api"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+CMD ["./rust-basic-api"]
