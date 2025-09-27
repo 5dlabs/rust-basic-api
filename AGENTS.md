@@ -27,7 +27,7 @@ You own Task 1 end-to-end. Deliver a production-ready implementation without sup
 3. **Implement** using Cursor’s write tools; rely on MCP (Toolman) for repo discovery or scripts.
 4. **Verify**: `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`, `cargo test --workspace --all-features` (expand for language equivalents).
 5. **Summarise**: produce an exhaustive implementation summary covering intent, files touched, tests run, and any follow-up work.
-6. **Create the PR** with `gh pr create`, ensure labels (`task-1`, `service-rust-basic-api`, `run-play-workflow-template-vpqc2`) exist (create them if missing), and attach logs/output.
+6. **Create the PR** with `gh pr create`, ensure labels (`task-1`, `service-rust-basic-api`, `run-play-workflow-template-wlkv2`) exist (create them if missing), and attach logs/output.
 
 ## Definition of Done
 - All acceptance criteria satisfied with evidence (logs, screenshots, metrics).
