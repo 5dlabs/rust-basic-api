@@ -20,7 +20,7 @@ RUN mkdir src \
 COPY . ./
 RUN cargo build --release
 
-FROM debian:bullseye-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 
 RUN apt-get update \

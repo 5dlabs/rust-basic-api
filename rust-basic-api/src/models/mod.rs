@@ -1,3 +1,2 @@
-//! Data models live here. Placeholder module for future domain types.
-
-// Re-export submodules here when they are added.
+//! Domain data structures live here.
+//! Additional model modules should be declared and re-exported from this file as they are implemented.

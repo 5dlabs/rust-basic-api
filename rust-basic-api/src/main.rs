@@ -148,10 +148,16 @@ async fn terminate_signal() {
 async fn terminate_signal() {
     use tokio::signal::unix::{signal, SignalKind};
 
-    signal(SignalKind::terminate())
-        .expect("failed to install terminate handler")
-        .recv()
-        .await;
+    let mut sigterm = signal(SignalKind::terminate()).expect("failed to install terminate handler");
+
+    loop {
+        if sigterm.recv().await.is_some() {
+            break;
+        }
+
+        tracing::warn!("SIGTERM listener returned None; reinstalling handler");
+        sigterm = signal(SignalKind::terminate()).expect("failed to reinstall terminate handler");
+    }
 }
 
 #[cfg(all(coverage, not(unix)))]

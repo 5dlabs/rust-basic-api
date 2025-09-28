@@ -41,6 +41,8 @@ cargo test --workspace --all-features
 cargo llvm-cov --workspace --all-features --fail-under-lines 95
 ```
 
+> Install the coverage tool once with `cargo install cargo-llvm-cov` (it downloads the LLVM toolchain on first use).
+
 ## Docker & Compose
 
 Build a production image:
@@ -67,7 +69,7 @@ rust-basic-api/
 │   ├── config.rs         # Environment-driven configuration loader
 │   ├── error.rs          # Application + configuration error types
 │   ├── main.rs           # Axum bootstrap and server entry point
-│   ├── models/           # Domain models (placeholder)
+│   ├── models/           # Domain model module (add submodules as needed)
 │   ├── repository/       # Database pool factory + data access layer stubs
 │   └── routes/           # HTTP route definitions (health check)
 ├── .env.example          # Configuration template

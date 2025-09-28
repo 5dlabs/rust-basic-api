@@ -12,11 +12,12 @@ Establish a production-ready Axum foundation for the `rust-basic-api` service wi
 
 ## Tests & Quality Gates
 ```
-2025-09-28T03:45Z cargo fmt --all -- --check
-2025-09-28T03:45Z cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
-2025-09-28T03:45Z cargo test --workspace --all-features
-2025-09-28T03:46Z cargo llvm-cov --workspace --all-features --fail-under-lines 95 (lines: 95.14%)
-2025-09-28T03:46Z DATABASE_URL=postgresql://example SERVER_PORT=3200 cargo run (manual curl /health -> OK)
+2025-09-28T19:13Z cargo fmt --all -- --check
+2025-09-28T19:13Z cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
+2025-09-28T19:14Z cargo test --workspace --all-features
+2025-09-28T19:14Z cargo llvm-cov --workspace --all-features --fail-under-lines 95 (lines: 95.14%)
+2025-09-28T19:14Z DATABASE_URL=postgresql://example SERVER_PORT=3200 cargo run (manual curl /health -> OK)
+2025-09-28T19:18Z docker build -t rust-basic-api .
 ```
 
 ## Follow-ups & Risks
