@@ -37,6 +37,8 @@ Before opening a PR, run the full set of gates from the project root:
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
 cargo test --workspace --all-features
+# Enforce ≥95% line coverage
+cargo llvm-cov --workspace --all-features --fail-under-lines 95
 ```
 
 ## Docker & Compose
