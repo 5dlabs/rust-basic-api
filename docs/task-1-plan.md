@@ -20,7 +20,8 @@
    - Supplied `.env.example` and updated README with run/build/test instructions and configuration matrix.
 5. **Quality Gates & Verification** *(complete)*
    - Authored targeted tests (unit/integration) to exercise config parsing and the health endpoint.
-   - Ran `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`, and `cargo test --workspace --all-features`.
+   - Ran `cargo fmt --all -- --check`, `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`, `cargo test --workspace --all-features`, and `cargo llvm-cov --workspace --all-features --fail-under-lines 95`.
+   - Manually launched `cargo run` with env overrides and confirmed `/health` returns `OK` via `curl`.
 6. **Git & PR Preparation** *(in progress)*
    - Stage and commit final changes with supporting documentation for reviewers.
    - Push the feature branch and create the PR with summary, labels, and test evidence.
@@ -29,6 +30,8 @@
 - 2025-09-28: `cargo fmt --all -- --check`
 - 2025-09-28: `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`
 - 2025-09-28: `cargo test --workspace --all-features`
+- 2025-09-28: `cargo llvm-cov --workspace --all-features --fail-under-lines 95` (line coverage 95.14%)
+- 2025-09-28: `DATABASE_URL=postgresql://example SERVER_PORT=3200 cargo run` + `curl http://127.0.0.1:3200/health` → `OK`
 
 ## Notes
 - `Config::from_env` applies sane defaults for host/port and validates numeric values.

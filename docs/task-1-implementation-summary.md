@@ -15,8 +15,10 @@ Establish a production-ready Axum foundation for the `rust-basic-api` service wi
 2025-09-28 cargo fmt --all -- --check
 2025-09-28 cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
 2025-09-28 cargo test --workspace --all-features
+2025-09-28 cargo llvm-cov --workspace --all-features --fail-under-lines 95
+2025-09-28 DATABASE_URL=postgresql://example SERVER_PORT=3200 cargo run (manual curl /health -> OK)
 ```
 
 ## Follow-ups & Risks
 - Database migrations and concrete repository queries to be implemented in subsequent tasks.
-- Consider integrating `cargo llvm-cov` once coverage tooling is available in the build environment.
+- Integrate the `cargo llvm-cov` line-coverage gate into CI once the shared pipeline provides the tooling.
