@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM rust:1.75 AS builder
+FROM rust:1.83 AS builder
 WORKDIR /app
 
 # Install build dependencies
