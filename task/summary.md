@@ -29,3 +29,7 @@ Executed from `rust-basic-api/` unless noted:
 
 ## Follow-ups
 - None required for Task 1; future tasks can extend repositories and routes atop the established structure.
+
+## Notes
+- Builder stays on `rust:1.83` because the dependency graph pulls in `icu_properties_data` (via `url`/`idna`), which requires `rustc >= 1.82`. Attempting to compile inside a `rust:1.70` image fails with that MSRV gate, so the scaffold spec is not achievable without downgrading crates.
+- Runtime remains on `debian:bookworm-slim`; trying to slim down to `bullseye-slim` resulted in a `GLIBC_2.34` mismatch when running the release binary produced by the newer toolchain.
