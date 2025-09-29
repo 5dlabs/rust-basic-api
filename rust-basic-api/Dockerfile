@@ -8,17 +8,16 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends pkg-config libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Cache dependencies
-COPY Cargo.toml ./
-COPY Cargo.lock ./
+# Prime the cargo cache without compiling the application code
+COPY Cargo.toml Cargo.lock ./
 RUN mkdir src \
     && echo "fn main() {}" > src/main.rs \
-    && cargo build --release \
+    && cargo fetch --locked \
     && rm -rf src
 
-# Build actual project
+# Build the release binary
 COPY . ./
-RUN cargo build --release
+RUN cargo build --release --locked
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app

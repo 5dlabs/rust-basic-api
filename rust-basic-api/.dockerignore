@@ -1,0 +1,25 @@
+# Exclude build artifacts and tooling metadata from the image context
+target
+**/target
+
+# Ignore version control and CI configuration
+.git
+.github
+
+# Local environment files
+.env
+.env.*
+
+# Development-only assets
+Dockerfile
+docker-compose.yml
+task/
+docs/
+AGENTS.md
+client-config.json
+cto-config.json
+coding-guidelines.md
+github-guidelines.md
+
+# Miscellaneous noise
+*.log
