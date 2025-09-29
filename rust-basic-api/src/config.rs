@@ -137,11 +137,16 @@ mod tests {
 
         let error = Config::from_env().expect_err("invalid port should cause error");
 
-        if let ConfigError::InvalidEnvVar { key, .. } = error {
-            assert_eq!(key, "SERVER_PORT");
-        } else {
-            panic!("unexpected error variant: {error:?}");
-        }
+        assert!(
+            matches!(
+                error,
+                ConfigError::InvalidEnvVar {
+                    key: "SERVER_PORT",
+                    ..
+                }
+            ),
+            "unexpected error variant: {error:?}"
+        );
 
         env::remove_var("SERVER_PORT");
         env::remove_var("DATABASE_URL");
@@ -155,11 +160,16 @@ mod tests {
 
         let error = Config::from_env().expect_err("invalid host should cause error");
 
-        if let ConfigError::InvalidEnvVar { key, .. } = error {
-            assert_eq!(key, "SERVER_HOST");
-        } else {
-            panic!("unexpected error variant: {error:?}");
-        }
+        assert!(
+            matches!(
+                error,
+                ConfigError::InvalidEnvVar {
+                    key: "SERVER_HOST",
+                    ..
+                }
+            ),
+            "unexpected error variant: {error:?}"
+        );
 
         env::remove_var("SERVER_HOST");
         env::remove_var("DATABASE_URL");
@@ -173,11 +183,16 @@ mod tests {
 
         let error = Config::from_env().expect_err("invalid connection count should cause error");
 
-        if let ConfigError::InvalidEnvVar { key, .. } = error {
-            assert_eq!(key, "DATABASE_MAX_CONNECTIONS");
-        } else {
-            panic!("unexpected error variant: {error:?}");
-        }
+        assert!(
+            matches!(
+                error,
+                ConfigError::InvalidEnvVar {
+                    key: "DATABASE_MAX_CONNECTIONS",
+                    ..
+                }
+            ),
+            "unexpected error variant: {error:?}"
+        );
 
         env::remove_var("DATABASE_MAX_CONNECTIONS");
         env::remove_var("DATABASE_URL");
@@ -194,11 +209,16 @@ mod tests {
 
         let error = Config::from_env().expect_err("non-utf host should cause error");
 
-        if let ConfigError::EnvVar { key, .. } = error {
-            assert_eq!(key, "SERVER_HOST");
-        } else {
-            panic!("unexpected error variant: {error:?}");
-        }
+        assert!(
+            matches!(
+                error,
+                ConfigError::EnvVar {
+                    key: "SERVER_HOST",
+                    ..
+                }
+            ),
+            "unexpected error variant: {error:?}"
+        );
 
         env::remove_var("SERVER_HOST");
         env::remove_var("DATABASE_URL");

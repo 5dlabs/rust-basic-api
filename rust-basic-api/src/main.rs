@@ -175,8 +175,12 @@ async fn shutdown_listener(
     terminate: impl Future<Output = ()> + Send,
 ) {
     tokio::select! {
-        () = ctrl_c => {},
-        () = terminate => {},
+        () = ctrl_c => {
+            tracing::info!("Ctrl+C signal received");
+        },
+        () = terminate => {
+            tracing::info!("terminate signal received");
+        },
     }
 
     tracing::info!("shutdown signal received");
