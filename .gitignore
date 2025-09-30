@@ -24,3 +24,18 @@ target
 # Added by cargo
 
 /target
+
+# Environment files
+.env
+**/.env
+
+# Coverage artifacts
+coverage.json
+**/coverage.json
+
+# Tooling metadata
+.factory/
+.mcp.json
+client-config.json
+cto-config.json
+AGENTS.md

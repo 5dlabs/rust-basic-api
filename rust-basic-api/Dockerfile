@@ -1,29 +1,35 @@
-FROM debian:bookworm-slim
+# syntax=docker/dockerfile:1.7
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates libssl3 wget --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* && apt-get clean
-
-# Create application user
-RUN useradd -r -u 1000 -m -d /app -s /bin/bash app
-
-# Set up application directory
+FROM rust:1.80-slim AS builder
 WORKDIR /app
 
-# Copy pre-built binary (expected to be built in CI)
-COPY rust-basic-api /app/rust-basic-api
-RUN chmod +x /app/rust-basic-api && chown -R app:app /app
+# Install build dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends pkg-config libssl-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Switch to app user
-USER app
+# Caching layer for dependencies
+COPY Cargo.toml ./
+COPY Cargo.lock ./
+RUN mkdir src \
+    && echo "fn main() {}" > src/main.rs \
+    && cargo build --release \
+    && rm -rf src
 
-# Expose port
-EXPOSE 8080
+# Copy actual sources and build
+COPY src ./src
+RUN cargo build --release
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+FROM debian:bookworm-slim AS runtime
+WORKDIR /app
 
-# Start the application
-CMD ["./rust-basic-api"]
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libssl3 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/target/release/rust-basic-api /usr/local/bin/rust-basic-api
+
+ENV RUST_LOG=info
+EXPOSE 3000
+
+CMD ["/usr/local/bin/rust-basic-api"]
