@@ -1,29 +1,38 @@
-FROM debian:bookworm-slim
+# syntax=docker/dockerfile:1
 
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates libssl3 wget --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/* && apt-get clean
-
-# Create application user
-RUN useradd -r -u 1000 -m -d /app -s /bin/bash app
-
-# Set up application directory
+FROM rust:1.70 as builder
 WORKDIR /app
 
-# Copy pre-built binary (expected to be built in CI)
-COPY rust-basic-api /app/rust-basic-api
-RUN chmod +x /app/rust-basic-api && chown -R app:app /app
+# Cache dependencies
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release && rm -rf src
 
-# Switch to app user
-USER app
+# Build application
+COPY src ./src
+RUN cargo build --release
 
-# Expose port
-EXPOSE 8080
+FROM debian:bookworm-slim as runtime
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates libssl3 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Start the application
+ENV APP_USER=app
+RUN useradd -r -u 1000 -m -d /app -s /usr/sbin/nologin "$APP_USER"
+
+WORKDIR /app
+
+COPY --from=builder /app/target/release/rust-basic-api /app/rust-basic-api
+
+RUN chown -R "$APP_USER":"$APP_USER" /app && chmod 755 /app/rust-basic-api
+
+USER "$APP_USER"
+
+ENV SERVER_HOST=0.0.0.0
+ENV SERVER_PORT=3000
+ENV RUST_LOG=info
+
+EXPOSE 3000
+
 CMD ["./rust-basic-api"]
