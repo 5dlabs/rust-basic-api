@@ -4,7 +4,7 @@ mod models;
 mod repository;
 mod routes;
 
-use axum::{Router, routing::get};
+use axum::{routing::get, Router};
 use config::Config;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
