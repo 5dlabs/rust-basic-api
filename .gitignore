@@ -31,3 +31,12 @@ target
 # already existing elements were commented out
 
 #/target
+
+# Hook files - never commit
+hooks/
+.hooks/
+**/hooks/
+
+# Environment files
+.env
+.env.local
