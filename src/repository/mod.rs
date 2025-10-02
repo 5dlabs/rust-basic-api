@@ -1,9 +1,7 @@
 use sqlx::PgPool;
 
 // Remove unused struct to fix dead code
-// pub struct Database {
-    pool: PgPool,
-}
+// 
 
 impl Database {
     pub fn new(pool: PgPool) -> Self {
