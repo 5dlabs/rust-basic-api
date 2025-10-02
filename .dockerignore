@@ -1,0 +1,48 @@
+# Target directory (build artifacts)
+target/
+rust-basic-api/target/
+
+# Git directory
+.git/
+.github/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Documentation and markdown
+*.md
+docs/
+
+# Task files
+task/
+
+# Test artifacts
+*.profraw
+*.profdata
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Cargo lock from subdirectories
+rust-basic-api/Cargo.lock
+
+# Agent and config files
+AGENTS.md
+client-config.json
+cto-config.json
+coding-guidelines.md
+github-guidelines.md
+clippy.toml
