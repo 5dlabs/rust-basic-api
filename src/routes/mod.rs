@@ -1,7 +1,8 @@
 use axum::routing::get;
 use axum::Router;
 
-pub fn user_routes() -> Router {
+// Remove unused function to fix dead code
+// pub fn user_routes() -> Router {
     Router::new()
         .route("/login", get(login_handler))
         .route("/register", get(register_handler))

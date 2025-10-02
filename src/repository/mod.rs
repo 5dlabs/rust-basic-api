@@ -1,6 +1,7 @@
 use sqlx::PgPool;
 
-pub struct Database {
+// Remove unused struct to fix dead code
+// pub struct Database {
     pool: PgPool,
 }
 
