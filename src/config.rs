@@ -1,3 +1,4 @@
+use crate::error::AppResult;
 use dotenv::dotenv;
 use std::env;
 
@@ -8,7 +9,12 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, env::VarError> {
+    /// Load configuration from environment variables
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if `DATABASE_URL` is not set or if `SERVER_PORT` is invalid
+    pub fn from_env() -> AppResult<Self> {
         dotenv().ok();
 
         let database_url = env::var("DATABASE_URL")?;
