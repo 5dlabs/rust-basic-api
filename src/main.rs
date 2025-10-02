@@ -1,31 +1,46 @@
 mod config;
 mod error;
-use axum::{Router, Server, routing::get};
+mod models;
+mod repository;
+mod routes;
+
+use axum::{Router, routing::get};
 use config::Config;
-use error::AppError;
 use std::net::SocketAddr;
+use tokio::net::TcpListener;
 use tracing::info;
-use tracing_subscriber;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
-async fn main() -> Result<(), AppError> {
-    tracing_subscriber::fmt::init();
+async fn main() -> anyhow::Result<()> {
+    // Initialize tracing with environment-based filtering
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
 
-    let config = Config::from_env().map_err(|e| AppError::Config(e.to_string()))?;
+    // Load configuration from environment
+    let config = Config::from_env()?;
+    info!("Configuration loaded: {:?}", config);
 
-    info!("Starting server on port {}", config.server_port);
+    // Build application router
+    let app = Router::new().route("/health", get(health_check));
 
-    let app: Router = Router::new().route("/health", get(health_check));
+    // Bind to address
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
+    let listener = TcpListener::bind(&addr).await?;
 
-    let addr: SocketAddr = format!("0.0.0.0:{}", config.server_port).parse().unwrap();
+    info!("Server listening on {}", addr);
 
-    Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    // Start server using Axum 0.7 API
+    axum::serve(listener, app).await?;
+
     Ok(())
 }
 
+/// Health check endpoint
 async fn health_check() -> &'static str {
     "OK"
 }
