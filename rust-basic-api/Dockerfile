@@ -1,3 +1,4 @@
+FROM rust:1.80 AS builder
 FROM debian:bookworm-slim
 
 # Install runtime dependencies

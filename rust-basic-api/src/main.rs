@@ -1,8 +1,6 @@
 use crate::config::Config;
-use axum::{routing::get, Router, Server};
+use axum::{routing::get, Router};
 use std::net::SocketAddr;
-use tokio::net::TcpListener;
-use tracing_subscriber;
 
 mod config;
 
@@ -12,7 +10,11 @@ async fn main() -> Result<(), anyhow::Error> {
     let config = Config::from_env()?;
     let app = Router::new().route("/health", get(health_check));
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
-    axum::Server::bind(&addr).serve(app.into_make_service()).await?;
+    axum::serve(
+        tokio::net::TcpListener::bind(&addr).await?,
+        app.into_make_service(),
+    )
+    .await?;
     Ok(())
 }
 
