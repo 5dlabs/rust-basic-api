@@ -5,6 +5,8 @@ use std::env;
 
 #[derive(Deserialize, Clone, Debug)]
 pub struct Config {
+    /// Database connection URL - will be used in Task 2 (Database Setup)
+    #[allow(dead_code)]
     pub database_url: String,
     pub server_port: u16,
 }
