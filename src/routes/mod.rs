@@ -1,4 +1,4 @@
-use axum::{routing::get, Router};
+use axum::Router;
 
 async fn login_handler() -> &'static str {
     "Login handler placeholder"
