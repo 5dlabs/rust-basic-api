@@ -1,19 +1,2 @@
-use sqlx::PgPool;
-
-// Remove unused struct to fix dead code
-//
-
-pub struct Database {
-    pool: PgPool,
-}
-
-impl Database {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-
-    pub async fn connect() -> Result<PgPool, sqlx::Error> {
-        let pool = PgPool::connect(&std::env::var("DATABASE_URL").unwrap()).await?;
-        Ok(pool)
-    }
-}
+// Repository module for database interactions
+// This module will contain database access layer implementations in future tasks
