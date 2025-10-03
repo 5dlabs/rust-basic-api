@@ -4,7 +4,6 @@ mod models;
 mod repository;
 mod routes;
 
-use crate::routes::user_routes; // Add routes module
 use anyhow::Result;
 use axum::{routing::get, Router};
 use config::Config;
@@ -31,9 +30,7 @@ async fn main() -> Result<()> {
     );
 
     // Build application router with health check endpoint
-    let app = Router::new()
-        .route("/health", get(health_check))
-        .merge(user_routes()); // Merge user routes
+    let app = Router::new().route("/health", get(health_check));
 
     // Start HTTP server
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
