@@ -21,8 +21,8 @@ WORKDIR /app
 # Install runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    ca-certificates \
-    libssl3 \
+    ca-certificates=20230311 \
+    libssl3=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
