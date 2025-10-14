@@ -62,14 +62,20 @@ mod tests {
             database_url: "postgresql://test:test@localhost/testdb".to_string(),
             server_port: 8080,
         };
-        assert_eq!(config.database_url, "postgresql://test:test@localhost/testdb");
+        assert_eq!(
+            config.database_url,
+            "postgresql://test:test@localhost/testdb"
+        );
         assert_eq!(config.server_port, 8080);
     }
 
     #[test]
     fn test_config_error_display() {
         let error = ConfigError::MissingEnvVar("TEST_VAR");
-        assert_eq!(format!("{error}"), "Missing required environment variable: TEST_VAR");
+        assert_eq!(
+            format!("{error}"),
+            "Missing required environment variable: TEST_VAR"
+        );
 
         let error = ConfigError::InvalidPort;
         assert_eq!(format!("{error}"), "Invalid SERVER_PORT value");
