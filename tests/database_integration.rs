@@ -2,6 +2,7 @@
 //!
 //! Tests for database schema, migrations, and basic operations.
 
+use serial_test::serial;
 use sqlx::types::chrono;
 use sqlx::{PgPool, Row};
 
@@ -124,6 +125,7 @@ async fn test_created_at_index_exists() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_user_insert() {
     let pool = get_test_pool().await;
     cleanup_test_data(&pool).await;
@@ -141,6 +143,7 @@ async fn test_user_insert() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_email_unique_constraint() {
     let pool = get_test_pool().await;
     cleanup_test_data(&pool).await;
@@ -165,16 +168,19 @@ async fn test_email_unique_constraint() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_timestamps_auto_populate() {
     let pool = get_test_pool().await;
     cleanup_test_data(&pool).await;
 
-    let row = sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2) RETURNING created_at, updated_at")
-        .bind("Timestamp Test")
-        .bind("timestamp@example.com")
-        .fetch_one(&pool)
-        .await
-        .expect("Insert failed");
+    let row = sqlx::query(
+        "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING created_at, updated_at",
+    )
+    .bind("Timestamp Test")
+    .bind("timestamp@example.com")
+    .fetch_one(&pool)
+    .await
+    .expect("Insert failed");
 
     let created_at: Option<chrono::DateTime<chrono::Utc>> = row.get("created_at");
     let updated_at: Option<chrono::DateTime<chrono::Utc>> = row.get("updated_at");
@@ -185,6 +191,7 @@ async fn test_timestamps_auto_populate() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_updated_at_trigger() {
     let pool = get_test_pool().await;
     cleanup_test_data(&pool).await;
@@ -215,12 +222,11 @@ async fn test_updated_at_trigger() {
         .expect("Update failed");
 
     // Fetch the updated user
-    let updated_row =
-        sqlx::query("SELECT created_at, updated_at FROM users WHERE id = $1")
-            .bind(user_id)
-            .fetch_one(&pool)
-            .await
-            .expect("Select failed");
+    let updated_row = sqlx::query("SELECT created_at, updated_at FROM users WHERE id = $1")
+        .bind(user_id)
+        .fetch_one(&pool)
+        .await
+        .expect("Select failed");
 
     let updated_created_at: chrono::DateTime<chrono::Utc> = updated_row.get("created_at");
     let updated_updated_at: chrono::DateTime<chrono::Utc> = updated_row.get("updated_at");
@@ -238,6 +244,7 @@ async fn test_updated_at_trigger() {
 }
 
 #[tokio::test]
+#[serial]
 async fn test_user_select() {
     let pool = get_test_pool().await;
     cleanup_test_data(&pool).await;
