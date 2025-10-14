@@ -39,8 +39,10 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn test_config_with_default_port() {
         let original_db = env::var("DATABASE_URL").ok();
         let original_port = env::var("SERVER_PORT").ok();
@@ -62,6 +64,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_config_with_custom_port() {
         let original_db = env::var("DATABASE_URL").ok();
         let original_port = env::var("SERVER_PORT").ok();
@@ -84,6 +87,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn test_config_invalid_port() {
         // Save current values
         let original_db = env::var("DATABASE_URL").ok();

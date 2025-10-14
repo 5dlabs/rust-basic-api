@@ -6,9 +6,9 @@ FROM rust:1.83-slim as builder
 WORKDIR /app
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pkg-config=1.8.1-1 \
+    libssl-dev=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
@@ -26,9 +26,9 @@ FROM debian:bookworm-slim
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl3 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates=20230311 \
+    libssl3=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy binary from builder
