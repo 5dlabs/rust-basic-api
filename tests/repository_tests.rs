@@ -90,7 +90,7 @@ async fn test_pool_concurrent_connections() {
         let pool_clone = pool.clone();
         let handle = tokio::spawn(async move {
             let conn = pool_clone.acquire().await;
-            assert!(conn.is_ok(), "Connection {} should succeed", i);
+            assert!(conn.is_ok(), "Connection {i} should succeed");
         });
         handles.push(handle);
     }
