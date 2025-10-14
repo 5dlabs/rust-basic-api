@@ -33,7 +33,7 @@ jobs:
         with:
           shared-key: rust-cache-ci
       - name: Run tests
-        run: cargo test --all-features --all-targets
+        run: cargo test --all-features --all-targets -- --test-threads=1
 
   coverage-rust:
     runs-on: ubuntu-22.04
@@ -49,4 +49,4 @@ jobs:
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --locked || true
       - name: Test coverage (≥95% required)
-        run: cargo llvm-cov --all-features --fail-under-lines 95
+        run: cargo llvm-cov --all-features --fail-under-lines 95 -- --test-threads=1
