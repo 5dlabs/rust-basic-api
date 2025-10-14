@@ -2,26 +2,12 @@
 //!
 //! A production-ready REST API built with Axum framework.
 
-mod config;
-mod error;
-mod models;
-mod repository;
-mod routes;
-
 use anyhow::Context;
 use axum::{extract::State, routing::get, Router};
-use config::Config;
-use sqlx::PgPool;
+use rust_basic_api::{config::Config, repository, AppState};
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-/// Application state shared across all request handlers
-#[derive(Clone)]
-pub struct AppState {
-    /// Database connection pool
-    pub pool: PgPool,
-}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -82,6 +68,7 @@ async fn health_check(State(_state): State<AppState>) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rust_basic_api::{repository, AppState};
 
     #[tokio::test]
     async fn test_health_check() {

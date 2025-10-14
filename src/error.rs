@@ -118,4 +118,35 @@ mod tests {
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         assert!(body_str.contains("Configuration error"));
     }
+
+    #[tokio::test]
+    async fn test_database_error_response() {
+        async fn handler() -> Result<String, AppError> {
+            // Simulate a database error by trying to connect to invalid database
+            let err = sqlx::Error::PoolTimedOut;
+            Err(AppError::Database(err))
+        }
+
+        let app = Router::new().route("/test", get(handler));
+
+        let response = app
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body_str.contains("Database error"));
+    }
+
+    #[test]
+    fn test_app_error_from_sqlx_error() {
+        let sqlx_error = sqlx::Error::PoolTimedOut;
+        let app_error: AppError = sqlx_error.into();
+        assert!(matches!(app_error, AppError::Database(_)));
+    }
 }

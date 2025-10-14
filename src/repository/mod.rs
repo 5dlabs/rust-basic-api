@@ -25,5 +25,5 @@ pub async fn create_pool(database_url: &str) -> Result<PgPool, sqlx::Error> {
         .await
 }
 
-#[cfg(test)]
+// Test utilities module - publicly available for integration tests
 pub mod test_utils;
