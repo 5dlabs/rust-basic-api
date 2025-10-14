@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM rust:1.70 as builder
+FROM rust:1.83 as builder
 
 WORKDIR /app
 
