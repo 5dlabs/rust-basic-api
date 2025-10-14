@@ -36,9 +36,9 @@
       }
     },
     "play": {
-      "repository": "5dlabs/rust-basic-api-2",
-      "service": "rust-basic-api-2",
-      "docsRepository": "5dlabs/rust-basic-api-2",
+      "repository": "5dlabs/rust-basic-api",
+      "service": "rust-basic-api",
+      "docsRepository": "5dlabs/rust-basic-api",
       "docsProjectDirectory": "docs",
       "workingDirectory": ".",
       "model": "claude-sonnet-4-5-20250929",
