@@ -14,6 +14,7 @@ use crate::error::AppResult;
 /// # Errors
 ///
 /// This endpoint never returns an error
+#[allow(clippy::unused_async)]
 pub async fn health_check() -> AppResult<(StatusCode, Json<Value>)> {
     Ok((StatusCode::OK, Json(json!({"status": "OK"}))))
 }
