@@ -99,4 +99,4 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
           RUST_LOG: debug
-        run: cargo llvm-cov --all-features --fail-under-lines 50
+        run: cargo llvm-cov --all-features --fail-under-lines 50 -- --test-threads=1
