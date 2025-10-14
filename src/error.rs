@@ -49,6 +49,7 @@ impl AppError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use axum::http::StatusCode;
 
     #[test]
     fn test_config_error() {
@@ -61,5 +62,19 @@ mod tests {
         let sql_error = sqlx::Error::RowNotFound;
         let error = AppError::from(sql_error);
         assert!(matches!(error, AppError::Database(_)));
+    }
+
+    #[test]
+    fn test_config_error_response() {
+        let error = AppError::config("test error");
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_database_error_response() {
+        let error = AppError::Database(sqlx::Error::RowNotFound);
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }
