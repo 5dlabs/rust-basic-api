@@ -1,0 +1,54 @@
+//! REST API server built with Axum framework
+//!
+//! This is the main entry point for the application. It sets up:
+//! - Structured logging with tracing
+//! - Environment-based configuration
+//! - HTTP server with health check endpoint
+
+mod config;
+mod error;
+mod models;
+mod repository;
+mod routes;
+
+use axum::{routing::get, Router};
+use config::Config;
+use std::net::SocketAddr;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Initialize tracing subscriber for structured logging
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+
+    // Load configuration from environment
+    let config = Config::from_env()?;
+    tracing::info!("Configuration loaded successfully");
+    tracing::debug!("Server port: {}", config.server_port);
+    tracing::debug!("Database URL configured: {}", !config.database_url.is_empty());
+
+    // Build application router with health check endpoint
+    let app = Router::new().route("/health", get(health_check));
+
+    // Start HTTP server
+    let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
+    tracing::info!("Listening on {}", addr);
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
+
+    Ok(())
+}
+
+/// Health check endpoint handler
+///
+/// Returns "OK" to indicate the service is running
+async fn health_check() -> &'static str {
+    "OK"
+}
