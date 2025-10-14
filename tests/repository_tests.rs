@@ -22,7 +22,7 @@ async fn test_create_pool_with_valid_url() {
     assert!(pool.size() > 0, "Pool should have connections");
 }
 
-/// Test that create_pool fails with invalid URL
+/// Test that `create_pool` fails with invalid `URL`
 #[tokio::test]
 async fn test_create_pool_with_invalid_url() {
     let invalid_url = "postgresql://invalid_user:invalid_pass@nonexistent_host:9999/nonexistent_db";
@@ -33,7 +33,7 @@ async fn test_create_pool_with_invalid_url() {
     assert!(result.is_err(), "Should fail with invalid database URL");
 }
 
-/// Test that create_pool fails with malformed URL
+/// Test that `create_pool` fails with malformed `URL`
 #[tokio::test]
 async fn test_create_pool_with_malformed_url() {
     let malformed_url = "not-a-valid-url";
