@@ -51,3 +51,56 @@ pub enum ConfigError {
     #[error("Invalid SERVER_PORT value")]
     InvalidPort,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_config_struct_creation() {
+        let config = Config {
+            database_url: "postgresql://test:test@localhost/testdb".to_string(),
+            server_port: 8080,
+        };
+        assert_eq!(config.database_url, "postgresql://test:test@localhost/testdb");
+        assert_eq!(config.server_port, 8080);
+    }
+
+    #[test]
+    fn test_config_error_display() {
+        let error = ConfigError::MissingEnvVar("TEST_VAR");
+        assert_eq!(format!("{error}"), "Missing required environment variable: TEST_VAR");
+
+        let error = ConfigError::InvalidPort;
+        assert_eq!(format!("{error}"), "Invalid SERVER_PORT value");
+    }
+
+    #[test]
+    fn test_config_error_debug() {
+        let error = ConfigError::MissingEnvVar("DATABASE_URL");
+        let debug_str = format!("{error:?}");
+        assert!(debug_str.contains("MissingEnvVar"));
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = Config {
+            database_url: "postgresql://test:test@localhost/testdb".to_string(),
+            server_port: 3000,
+        };
+        let cloned = config.clone();
+        assert_eq!(cloned.database_url, config.database_url);
+        assert_eq!(cloned.server_port, config.server_port);
+    }
+
+    #[test]
+    fn test_config_debug() {
+        let config = Config {
+            database_url: "postgresql://test:test@localhost/testdb".to_string(),
+            server_port: 3000,
+        };
+        let debug_str = format!("{config:?}");
+        assert!(debug_str.contains("Config"));
+        assert!(debug_str.contains("3000"));
+    }
+}

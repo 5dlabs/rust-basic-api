@@ -52,3 +52,70 @@ impl IntoResponse for AppError {
         (status, body).into_response()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::Request;
+    use axum::routing::get;
+    use axum::Router;
+    use tower::ServiceExt;
+
+    #[test]
+    fn test_app_error_display() {
+        let error = AppError::Internal("test error".to_string());
+        assert_eq!(format!("{error}"), "Internal server error: test error");
+    }
+
+    #[test]
+    fn test_app_error_from_config_error() {
+        let config_error = crate::config::ConfigError::InvalidPort;
+        let app_error: AppError = config_error.into();
+        assert!(matches!(app_error, AppError::Config(_)));
+    }
+
+    #[tokio::test]
+    async fn test_internal_error_response() {
+        async fn handler() -> Result<String, AppError> {
+            Err(AppError::Internal("test internal error".to_string()))
+        }
+
+        let app = Router::new().route("/test", get(handler));
+
+        let response = app
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body_str.contains("Internal server error"));
+    }
+
+    #[tokio::test]
+    async fn test_config_error_response() {
+        async fn handler() -> Result<String, AppError> {
+            Err(AppError::Config(crate::config::ConfigError::InvalidPort))
+        }
+
+        let app = Router::new().route("/test", get(handler));
+
+        let response = app
+            .oneshot(Request::builder().uri("/test").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+        let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let body_str = String::from_utf8(body.to_vec()).unwrap();
+        assert!(body_str.contains("Configuration error"));
+    }
+}
