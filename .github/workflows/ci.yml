@@ -24,6 +24,20 @@ jobs:
 
   test-rust:
     runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -32,11 +46,36 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: rust-cache-ci
-      - name: Run tests
-        run: cargo test --all-features --all-targets
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          cargo install sqlx-cli --no-default-features --features postgres
+          sqlx migrate run
+      - name: Run unit tests
+        run: cargo test --lib --all-features
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          RUST_LOG: debug
+        run: cargo test --test database_integration --all-features -- --test-threads=1
 
   coverage-rust:
     runs-on: ubuntu-22.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -46,7 +85,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: rust-cache-ci
+      - name: Run migrations
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          cargo install sqlx-cli --no-default-features --features postgres
+          sqlx migrate run
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov --force
-      - name: Test coverage (≥50% for Task 1 infrastructure)
+      - name: Test coverage (≥50% for Task 2 with database)
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
+          RUST_LOG: debug
         run: cargo llvm-cov --all-features --fail-under-lines 50
