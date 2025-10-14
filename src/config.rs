@@ -55,6 +55,8 @@ pub enum ConfigError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
+    use std::env;
 
     #[test]
     fn test_config_struct_creation() {
@@ -67,6 +69,88 @@ mod tests {
             "postgresql://test:test@localhost/testdb"
         );
         assert_eq!(config.server_port, 8080);
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_from_env_with_valid_vars() {
+        // Set required environment variables
+        env::set_var("DATABASE_URL", "postgresql://user:pass@localhost:5432/db");
+        env::set_var("SERVER_PORT", "8080");
+
+        let config = Config::from_env().expect("Should load config successfully");
+        assert_eq!(
+            config.database_url,
+            "postgresql://user:pass@localhost:5432/db"
+        );
+        assert_eq!(config.server_port, 8080);
+
+        // Clean up
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_from_env_default_port() {
+        // Set only required DATABASE_URL
+        env::set_var("DATABASE_URL", "postgresql://localhost/test");
+        env::remove_var("SERVER_PORT");
+
+        let config = Config::from_env().expect("Should use default port");
+        assert_eq!(config.server_port, 3000);
+
+        // Clean up
+        env::remove_var("DATABASE_URL");
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_from_env_missing_database_url() {
+        // Ensure DATABASE_URL is not set
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+
+        let result = Config::from_env();
+        assert!(result.is_err());
+
+        if let Err(ConfigError::MissingEnvVar(var)) = result {
+            assert_eq!(var, "DATABASE_URL");
+        } else {
+            panic!("Expected MissingEnvVar error");
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_from_env_invalid_port() {
+        // Set DATABASE_URL but invalid port
+        env::set_var("DATABASE_URL", "postgresql://localhost/test");
+        env::set_var("SERVER_PORT", "invalid_port");
+
+        let result = Config::from_env();
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ConfigError::InvalidPort)));
+
+        // Clean up
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_from_env_port_out_of_range() {
+        // Set DATABASE_URL but port > u16::MAX
+        env::set_var("DATABASE_URL", "postgresql://localhost/test");
+        env::set_var("SERVER_PORT", "99999");
+
+        let result = Config::from_env();
+        assert!(result.is_err());
+        assert!(matches!(result, Err(ConfigError::InvalidPort)));
+
+        // Clean up
+        env::remove_var("DATABASE_URL");
+        env::remove_var("SERVER_PORT");
     }
 
     #[test]

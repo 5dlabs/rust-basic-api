@@ -47,6 +47,6 @@ jobs:
         with:
           shared-key: rust-cache-ci
       - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --force
       - name: Test coverage (≥50% for Task 1 infrastructure)
         run: cargo llvm-cov --all-features --fail-under-lines 50
