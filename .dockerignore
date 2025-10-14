@@ -1,0 +1,29 @@
+# Git
+.git/
+.gitignore
+
+# Target directory
+target/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+*.md
+docs/
+
+# Testing
+coverage/
+
+# CI/CD
+.github/
+
+# Misc
+.DS_Store
+Thumbs.db
