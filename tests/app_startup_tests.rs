@@ -23,7 +23,7 @@ async fn get_test_pool() -> Option<PgPool> {
     Some(pool)
 }
 
-/// Test that AppState can be created with a valid pool
+/// Test that `AppState` can be created with a valid pool
 #[tokio::test]
 async fn test_app_state_creation() {
     if let Some(pool) = get_test_pool().await {
@@ -78,7 +78,7 @@ async fn health_check_handler(
     "OK"
 }
 
-/// Test that AppState can be cloned
+/// Test that `AppState` can be cloned
 #[tokio::test]
 async fn test_app_state_clone() {
     if let Some(pool) = get_test_pool().await {
@@ -100,7 +100,7 @@ async fn test_app_state_clone() {
     }
 }
 
-/// Test database connectivity through AppState
+/// Test database connectivity through `AppState`
 #[tokio::test]
 async fn test_app_state_database_query() {
     if let Some(pool) = get_test_pool().await {
@@ -115,7 +115,7 @@ async fn test_app_state_database_query() {
     }
 }
 
-/// Test that pool from test_utils works correctly
+/// Test that pool from `test_utils` works correctly
 #[tokio::test]
 async fn test_test_utils_pool() {
     if std::env::var("DATABASE_URL").is_ok() {
@@ -134,7 +134,7 @@ async fn test_test_utils_pool() {
     }
 }
 
-/// Test that cleanup_database works
+/// Test that `cleanup_database` works
 #[tokio::test]
 async fn test_cleanup_database_function() {
     if std::env::var("DATABASE_URL").is_ok() {

@@ -4,7 +4,7 @@
 
 use std::time::Duration;
 
-/// Test that create_pool returns a valid pool with correct configuration
+/// Test that `create_pool` returns a valid pool with correct configuration
 #[tokio::test]
 async fn test_create_pool_with_valid_url() {
     dotenvy::from_filename(".env.test").ok();
