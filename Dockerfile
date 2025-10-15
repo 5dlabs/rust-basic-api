@@ -11,8 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock* ./
+# Copy manifests (Cargo.lock is required for reproducible builds)
+COPY Cargo.toml Cargo.lock ./
 
 # Copy source code
 COPY src ./src
