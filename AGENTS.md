@@ -16,15 +16,37 @@ Cursor is executing in headless mode (`--print --force --output-format stream-js
 2. **Keep CI healthy.** Inspect `.github/workflows`, runner labels, caches, and secrets. Patch pipeline issues and rerun jobs as needed.
 3. **Resolve merge conflicts immediately.** Keep `feature/task-1-implementation` in a mergeable state at all times.
 4. **Preserve implementation intent.** Do not backtrack Rex’s work. If something looks wrong, raise it via PR comments or create follow-up tasks.
-5. **Label discipline.** Ensure the PR carries `task-1`, `service-rust-basic-api`, and `run-play-workflow-template-qbgds`. Apply or remove `ready-for-qa` based on CI status.
+5. **Label discipline.** Ensure the PR carries `task-1`, `service-rust-basic-api`, and `run-play-workflow-template-82q48`. Apply or remove `ready-for-qa` based on CI status.
 
 ## Quality Audit Workflow
+
+### Progressive Success Criteria
+
+**REQUIRED** (must pass before approval):
+1. ✅ **Lint checks pass** – Zero warnings from language-specific linters
+2. ✅ **Format checks pass** – Code formatted according to project standards
+3. ✅ **Unit tests pass** – All unit tests execute successfully
+4. ✅ **Build succeeds** – Project compiles/builds without errors
+
+**PREFERRED** (can be deferred to Tess if blocked):
+- Integration tests pass
+- Code coverage ≥ 95%
+- Performance benchmarks stable
+- Documentation complete
+
+**IMPORTANT**: You may **approve the PR early** if all REQUIRED criteria pass, even if PREFERRED criteria remain incomplete. Document any deferred items in your PR review for Tess to validate.
+
+### Audit Steps
 1. **Baseline** – `git status`, inspect the diff, list hotspots.
 2. **Code review** – enforce conventions from `coding-guidelines.md` and `github-guidelines.md`.
 3. **Lint & format** – run formatter/linters, address every finding (no `#[allow(...)]`).
-4. **Pipeline** – repair workflow YAML, secrets, or infrastructure drift that blocks CI.
-5. **Document findings** – leave PR comments describing issues, fixes, and outstanding risks.
-6. **Signal readiness** – only when CI is green and lint/tests pass, note readiness for Tess.
+4. **Unit tests** – verify all unit tests pass locally.
+5. **Pipeline** – repair workflow YAML, secrets, or infrastructure drift that blocks CI.
+6. **Document findings** – leave PR comments describing issues, fixes, and outstanding risks.
+7. **Early approval decision**:
+   - If all REQUIRED criteria pass → APPROVE immediately
+   - If PREFERRED criteria fail but REQUIRED pass → APPROVE with notes for Tess
+   - If REQUIRED criteria fail → REQUEST_CHANGES with specific remediation steps
 
 ## Pull Request Expectations
 - PR must exist with the proper branch (`feature/task-1-implementation`) and labels.
