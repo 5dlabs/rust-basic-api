@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use std::env;
+use thiserror::Error;
 
 /// Application configuration loaded from environment variables
 #[derive(Debug, Clone)]
@@ -10,20 +11,42 @@ pub struct Config {
     pub server_port: u16,
 }
 
+/// Errors that can occur while loading configuration
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum ConfigError {
+    /// The `DATABASE_URL` environment variable was missing or invalid
+    #[error("DATABASE_URL environment variable must be set: {0}")]
+    DatabaseUrl(#[source] env::VarError),
+    /// The `DATABASE_URL` environment variable was provided but empty
+    #[error("DATABASE_URL environment variable cannot be empty")]
+    EmptyDatabaseUrl,
+}
+
 impl Config {
     /// Load configuration from environment variables
     ///
     /// # Errors
     ///
-    /// Returns an error if `DATABASE_URL` is not set or if `SERVER_PORT` is invalid
-    pub fn from_env() -> Result<Self, env::VarError> {
+    /// Returns an error if `DATABASE_URL` is not set or empty
+    pub fn from_env() -> Result<Self, ConfigError> {
         dotenv().ok();
 
-        let database_url = env::var("DATABASE_URL")?;
-        let server_port = env::var("SERVER_PORT")
-            .unwrap_or_else(|_| "3000".to_string())
-            .parse()
-            .unwrap_or(3000);
+        let database_url = env::var("DATABASE_URL").map_err(ConfigError::DatabaseUrl)?;
+        if database_url.trim().is_empty() {
+            return Err(ConfigError::EmptyDatabaseUrl);
+        }
+
+        let server_port = match env::var("SERVER_PORT") {
+            Ok(value) => value.parse().unwrap_or_else(|error| {
+                tracing::warn!(
+                    %value,
+                    %error,
+                    "Invalid SERVER_PORT provided; defaulting to 3000"
+                );
+                3000
+            }),
+            Err(_) => 3000,
+        };
 
         Ok(Config {
             database_url,
@@ -35,29 +58,74 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::sync::{Mutex, OnceLock};
+
+    fn env_guard() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(()))
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn restore_var(key: &str, original: Option<String>) {
+        if let Some(value) = original {
+            env::set_var(key, value);
+        } else {
+            env::remove_var(key);
+        }
+    }
 
     #[test]
     fn test_config_from_env() {
-        // Tests that Config loads from environment
-        // Note: .env file is loaded by dotenv() in from_env()
+        let _guard = env_guard();
+
+        let original_database = env::var("DATABASE_URL").ok();
+        let original_port = env::var("SERVER_PORT").ok();
+
+        env::set_var("DATABASE_URL", "postgresql://localhost/test_db");
+        env::set_var("SERVER_PORT", "8080");
+
         let config = Config::from_env().expect("Failed to load config");
-        assert!(!config.database_url.is_empty());
-        assert!(config.server_port > 0);
+        assert_eq!(config.database_url, "postgresql://localhost/test_db");
+        assert_eq!(config.server_port, 8080);
+
+        restore_var("DATABASE_URL", original_database);
+        restore_var("SERVER_PORT", original_port);
     }
 
     #[test]
     fn test_config_port_defaults() {
-        // When SERVER_PORT is not set or invalid, should default to 3000
+        let _guard = env_guard();
+
+        let original_database = env::var("DATABASE_URL").ok();
         let original_port = env::var("SERVER_PORT").ok();
-        env::remove_var("SERVER_PORT");
+
+        env::set_var("DATABASE_URL", "postgresql://localhost/test_db");
+        env::set_var("SERVER_PORT", "invalid");
 
         let config = Config::from_env().expect("Failed to load config");
         assert_eq!(config.server_port, 3000);
 
-        // Restore original value if it existed
-        if let Some(port) = original_port {
-            env::set_var("SERVER_PORT", port);
-        }
+        restore_var("DATABASE_URL", original_database);
+        restore_var("SERVER_PORT", original_port);
+    }
+
+    #[test]
+    fn test_config_missing_database_url_errors() {
+        let _guard = env_guard();
+
+        let original_database = env::var("DATABASE_URL").ok();
+        let original_port = env::var("SERVER_PORT").ok();
+
+        env::set_var("DATABASE_URL", "   ");
+        env::remove_var("SERVER_PORT");
+
+        let result = Config::from_env();
+        assert!(matches!(result, Err(ConfigError::EmptyDatabaseUrl)));
+
+        restore_var("DATABASE_URL", original_database);
+        restore_var("SERVER_PORT", original_port);
     }
 
     #[test]

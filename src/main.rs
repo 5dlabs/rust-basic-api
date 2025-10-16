@@ -7,6 +7,7 @@ mod routes;
 use axum::{routing::get, Router};
 use config::Config;
 use std::net::SocketAddr;
+use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -42,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
     // Start the HTTP server
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
         .await?;
 
     Ok(())
@@ -52,6 +54,35 @@ async fn main() -> anyhow::Result<()> {
 /// Returns "OK" to indicate the service is running
 async fn health_check() -> &'static str {
     "OK"
+}
+
+async fn shutdown_signal() {
+    tracing::info!("Awaiting shutdown signal");
+
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install CTRL+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        use tokio::signal::unix::{signal, SignalKind};
+
+        let mut terminate =
+            signal(SignalKind::terminate()).expect("Failed to install SIGTERM handler");
+        terminate.recv().await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
+
+    tracing::info!("Shutdown signal received; stopping server");
 }
 
 #[cfg(test)]
