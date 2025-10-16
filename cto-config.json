@@ -49,9 +49,9 @@
       "continueSession": false,
       "overwriteMemory": false,
       "maxRetries": 10,
-      "implementationMaxRetries": 6,
-      "qualityMaxRetries": 6,
-      "testingMaxRetries": 6,
+      "implementationMaxRetries": 3,
+      "qualityMaxRetries": 3,
+      "testingMaxRetries": 3,
       "autoMerge": true
     },
     "docs_ingest": {
