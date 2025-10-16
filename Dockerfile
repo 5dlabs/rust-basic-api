@@ -5,8 +5,8 @@ WORKDIR /app
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config \
-    libssl-dev \
+    pkg-config=1.8.1-1 \
+    libssl-dev=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy manifests
@@ -25,8 +25,8 @@ WORKDIR /app
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    libssl3 \
+    ca-certificates=20230311 \
+    libssl3=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
