@@ -1,0 +1,11 @@
+target/
+.git/
+.gitignore
+.env
+*.md
+Dockerfile
+.dockerignore
+.cursor/
+task/
+hooks/
+.hooks/
