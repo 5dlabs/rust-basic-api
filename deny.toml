@@ -1,0 +1,57 @@
+# cargo-deny configuration
+# This file defines license policies and security checks for dependencies
+
+[licenses]
+# Accept common open-source licenses used in the Rust ecosystem
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "Zlib",
+    "CDLA-Permissive-2.0",
+]
+
+# Confidence threshold for license detection (0.0 - 1.0)
+confidence-threshold = 0.8
+
+# Allow license expressions to use OR for dual-licensed crates
+exceptions = []
+
+# [[licenses.clarify]]
+# Some crates don't advertise their licenses properly, clarify them here
+# Example:
+# [[licenses.clarify]]
+# crate = "ring"
+# expression = "ISC AND MIT"
+# license-files = []
+
+[bans]
+# Deny specific crates by name
+deny = []
+
+# Skip checking certain crates
+skip = []
+
+# Skip checking transitive dependencies
+skip-tree = []
+
+[advisories]
+# Check for security advisories from RustSec
+ignore = []
+
+# The path to the advisory database
+db-path = "~/.cargo/advisory-db"
+db-urls = ["https://github.com/rustsec/advisory-db"]
+
+[sources]
+# Lint level for unknown sources
+unknown-registry = "warn"
+unknown-git = "warn"
+
+# Allow only crates.io registry
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

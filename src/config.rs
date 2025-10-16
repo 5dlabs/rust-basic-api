@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use std::env;
 
 // Allow dead_code for database_url as it's a placeholder for future database integration
