@@ -11,6 +11,13 @@ pub struct Config {
 }
 
 impl Config {
+    /// Load configuration from environment variables
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if:
+    /// - `DATABASE_URL` environment variable is not set
+    /// - `SERVER_PORT` contains an invalid u16 value
     pub fn from_env() -> Result<Self> {
         dotenv().ok();
 
