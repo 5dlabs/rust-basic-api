@@ -48,7 +48,7 @@ jobs:
         with:
           shared-key: rust-cache-ci
       - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov
+        run: cargo install cargo-llvm-cov --force
       - name: Test coverage (≥95% required once tests exist)
         run: |
           # Run coverage but don't fail on 0% for initial setup
