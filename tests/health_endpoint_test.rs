@@ -21,9 +21,7 @@ async fn test_health_endpoint_basic() {
     // Give server time to start
     tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
 
-    let response = reqwest::get(format!("http://{addr}/health"))
-        .await
-        .unwrap();
+    let response = reqwest::get(format!("http://{addr}/health")).await.unwrap();
 
     assert_eq!(response.status(), 200);
     let text = response.text().await.unwrap();
