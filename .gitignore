@@ -24,3 +24,15 @@ target
 # Added by cargo
 
 /target
+
+# Hook files - never commit
+hooks/
+.hooks/
+**/hooks/
+
+# Environment files
+.env
+
+# IDE
+.vscode/
+.idea/
