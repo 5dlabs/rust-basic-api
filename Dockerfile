@@ -1,18 +1,10 @@
 # Build stage
-FROM rust:1.75 as builder
+FROM rust:latest as builder
 
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml ./
-
-# Create a dummy main.rs to build dependencies
-RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
-    rm -rf src
-
-# Copy actual source code
+# Copy manifests and source
+COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 # Build the application
