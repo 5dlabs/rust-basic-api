@@ -2,11 +2,14 @@ use anyhow::{Context, Result};
 use dotenvy::dotenv;
 use std::env;
 
-// Allow dead_code for database_url as it's a placeholder for future database integration
-#[allow(dead_code)]
+/// Configuration for the application loaded from environment variables
 #[derive(Debug, Clone)]
 pub struct Config {
+    /// Database connection URL (currently unused but required for future database integration)
+    /// Justification for `dead_code`: This field will be used when database connection pooling is implemented
+    #[allow(dead_code)]
     pub database_url: String,
+    /// Port number for the HTTP server
     pub server_port: u16,
 }
 

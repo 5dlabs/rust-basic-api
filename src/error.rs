@@ -4,13 +4,16 @@ use axum::{
 };
 use thiserror::Error;
 
-// Allow dead_code for ApiError as it's a placeholder for future error handling
+/// Application error types with proper HTTP response mapping
+/// Justification for `dead_code`: This enum will be used when database operations and error handling are implemented
 #[allow(dead_code)]
 #[derive(Error, Debug)]
 pub enum ApiError {
+    /// Database operation error
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 
+    /// Internal server error with custom message
     #[error("Internal server error: {0}")]
     Internal(String),
 }
