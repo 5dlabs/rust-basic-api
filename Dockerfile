@@ -20,9 +20,9 @@ FROM debian:bookworm-slim
 WORKDIR /app
 
 # Install required runtime dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    libssl3 \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates=20230311 \
+    libssl3=3.0.15-1~deb12u1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled binary from the builder stage
