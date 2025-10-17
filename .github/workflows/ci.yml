@@ -8,9 +8,6 @@ on:
 jobs:
   lint-rust:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: ./rust-basic-api
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -19,7 +16,6 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust-basic-api -> target
           shared-key: rust-cache-ci
       - name: Format check
         run: cargo fmt --all -- --check
@@ -28,9 +24,6 @@ jobs:
 
   test-rust:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: ./rust-basic-api
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -38,16 +31,12 @@ jobs:
           toolchain: stable
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust-basic-api -> target
           shared-key: rust-cache-ci
       - name: Run tests
         run: cargo test --all-features --all-targets
 
   coverage-rust:
     runs-on: ubuntu-22.04
-    defaults:
-      run:
-        working-directory: ./rust-basic-api
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -56,7 +45,6 @@ jobs:
           components: llvm-tools-preview
       - uses: Swatinem/rust-cache@v2
         with:
-          workspaces: rust-basic-api -> target
           shared-key: rust-cache-ci
       - name: Install cargo-llvm-cov
         run: cargo install cargo-llvm-cov
