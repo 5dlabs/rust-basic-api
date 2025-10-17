@@ -1,5 +1,4 @@
 mod config;
-#[allow(dead_code)]
 mod error;
 mod models;
 mod repository;
@@ -10,6 +9,9 @@ use config::Config;
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+// Re-export error types for public API
+pub use error::AppError;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
