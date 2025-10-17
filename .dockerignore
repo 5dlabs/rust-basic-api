@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+AGENTS.md
+coding-guidelines.md
+github-guidelines.md
+docs/
+
+# Task files
+task/
+
+# Build artifacts
+target/
+*.log
+
+# Environment files (use build args instead)
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.github/
+
+# Configs
+client-config.json
+cto-config.json
+.mcp.json
