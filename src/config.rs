@@ -15,15 +15,19 @@ impl Config {
     ///
     /// # Errors
     ///
-    /// Returns an error if required environment variables are missing or invalid
-    pub fn from_env() -> Result<Self, env::VarError> {
+    /// Returns an error if required or malformed environment variables are encountered
+    pub fn from_env() -> Result<Self, ConfigError> {
         dotenv().ok();
 
-        let database_url = env::var("DATABASE_URL")?;
+        let database_url = env::var("DATABASE_URL").map_err(|err| ConfigError::MissingEnvVar {
+            key: "DATABASE_URL",
+            source: err,
+        })?;
+
         let server_port = env::var("SERVER_PORT")
             .unwrap_or_else(|_| "3000".to_string())
-            .parse()
-            .unwrap_or(3000);
+            .parse::<u16>()
+            .map_err(|err| ConfigError::InvalidServerPort { source: err })?;
 
         Ok(Config {
             database_url,
@@ -32,18 +36,52 @@ impl Config {
     }
 }
 
+/// Errors that can occur during configuration loading
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    /// Missing required environment variable
+    #[error("Missing required environment variable {key}")]
+    MissingEnvVar {
+        key: &'static str,
+        #[source]
+        source: env::VarError,
+    },
+
+    /// Invalid server port value
+    #[error("Invalid SERVER_PORT value")]
+    InvalidServerPort {
+        #[source]
+        source: std::num::ParseIntError,
+    },
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env;
+    use std::sync::Mutex;
+
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn test_default_server_port() {
-        // When SERVER_PORT is not set, it should default to 3000
+        let _guard = ENV_MUTEX.lock().unwrap();
+
         env::remove_var("SERVER_PORT");
-        let port = env::var("SERVER_PORT")
-            .unwrap_or_else(|_| "3000".to_string())
-            .parse::<u16>()
-            .unwrap_or(3000);
-        assert_eq!(port, 3000);
+        env::set_var("DATABASE_URL", "postgres://example");
+
+        let config = Config::from_env().expect("config loads with defaults");
+        assert_eq!(config.server_port, 3000);
+    }
+
+    #[test]
+    fn test_invalid_server_port() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
+        env::set_var("SERVER_PORT", "invalid");
+        env::set_var("DATABASE_URL", "postgres://example");
+
+        let result = Config::from_env();
+        assert!(matches!(result, Err(ConfigError::InvalidServerPort { .. })));
     }
 }

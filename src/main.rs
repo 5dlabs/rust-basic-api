@@ -7,8 +7,7 @@ mod routes;
 
 use axum::{routing::get, Router};
 use config::Config;
-use std::net::SocketAddr;
-use tower_http::trace::TraceLayer;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
@@ -25,22 +24,25 @@ async fn main() -> anyhow::Result<()> {
     // Load configuration from environment
     let config = Config::from_env()?;
     tracing::info!(
-        "Starting server with database URL: {}",
-        &config.database_url
+        server_port = config.server_port,
+        "Loaded server configuration"
+    );
+    tracing::debug!(
+        has_database_url = !config.database_url.is_empty(),
+        "Database settings loaded"
     );
 
     // Build application router with routes
-    let app = Router::new()
-        .route("/health", get(health_check))
-        .layer(TraceLayer::new_for_http());
+    let app = Router::new().route("/health", get(health_check));
 
     // Create socket address
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
+    let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), config.server_port);
     tracing::info!("Listening on {}", addr);
 
     // Start the HTTP server
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    axum::serve(listener, app).await?;
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await?;
 
     Ok(())
 }
