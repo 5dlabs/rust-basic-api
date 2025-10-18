@@ -2,6 +2,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
+use std::env;
 use thiserror::Error;
 
 /// Application-level errors
@@ -11,17 +12,24 @@ pub enum AppError {
     #[error("Database error: {0}")]
     Database(#[from] sqlx::Error),
 
-    /// Configuration error
-    #[error("Configuration error: {0}")]
-    Config(String),
-
     /// Internal server error
     #[error("Internal server error: {0}")]
     Internal(#[from] anyhow::Error),
 
-    /// Environment variable error
-    #[error("Environment variable error: {0}")]
-    EnvVar(#[from] std::env::VarError),
+    /// Missing required environment variable
+    #[error("Missing required environment variable {key}")]
+    MissingEnvVar {
+        key: &'static str,
+        #[source]
+        source: env::VarError,
+    },
+
+    /// Invalid server port value
+    #[error("Invalid SERVER_PORT value")]
+    InvalidServerPort {
+        #[source]
+        source: std::num::ParseIntError,
+    },
 }
 
 impl IntoResponse for AppError {
@@ -31,16 +39,16 @@ impl IntoResponse for AppError {
                 tracing::error!("Database error: {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Database error")
             }
-            AppError::Config(ref err) => {
-                tracing::error!("Configuration error: {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error")
-            }
             AppError::Internal(ref err) => {
                 tracing::error!("Internal error: {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
             }
-            AppError::EnvVar(ref err) => {
-                tracing::error!("Environment variable error: {}", err);
+            AppError::MissingEnvVar { key, ref source } => {
+                tracing::error!("Missing environment variable {}: {}", key, source);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error")
+            }
+            AppError::InvalidServerPort { ref source } => {
+                tracing::error!("Invalid server port: {}", source);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Configuration error")
             }
         };
@@ -55,7 +63,13 @@ mod tests {
 
     #[test]
     fn test_error_display() {
-        let err = AppError::Config("test error".to_string());
-        assert_eq!(err.to_string(), "Configuration error: test error");
+        let err = AppError::MissingEnvVar {
+            key: "TEST_VAR",
+            source: std::env::VarError::NotPresent,
+        };
+        assert_eq!(
+            err.to_string(),
+            "Missing required environment variable TEST_VAR"
+        );
     }
 }

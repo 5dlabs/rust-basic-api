@@ -1,6 +1,4 @@
 mod config;
-// Error module is defined for future use when database operations are implemented
-#[allow(dead_code)]
 mod error;
 mod models;
 mod repository;

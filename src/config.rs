@@ -1,3 +1,4 @@
+use crate::error::AppError;
 use dotenv::dotenv;
 use std::env;
 
@@ -16,10 +17,10 @@ impl Config {
     /// # Errors
     ///
     /// Returns an error if required or malformed environment variables are encountered
-    pub fn from_env() -> Result<Self, ConfigError> {
+    pub fn from_env() -> Result<Self, AppError> {
         dotenv().ok();
 
-        let database_url = env::var("DATABASE_URL").map_err(|err| ConfigError::MissingEnvVar {
+        let database_url = env::var("DATABASE_URL").map_err(|err| AppError::MissingEnvVar {
             key: "DATABASE_URL",
             source: err,
         })?;
@@ -27,7 +28,7 @@ impl Config {
         let server_port = env::var("SERVER_PORT")
             .unwrap_or_else(|_| "3000".to_string())
             .parse::<u16>()
-            .map_err(|err| ConfigError::InvalidServerPort { source: err })?;
+            .map_err(|err| AppError::InvalidServerPort { source: err })?;
 
         Ok(Config {
             database_url,
@@ -36,28 +37,10 @@ impl Config {
     }
 }
 
-/// Errors that can occur during configuration loading
-#[derive(Debug, thiserror::Error)]
-pub enum ConfigError {
-    /// Missing required environment variable
-    #[error("Missing required environment variable {key}")]
-    MissingEnvVar {
-        key: &'static str,
-        #[source]
-        source: env::VarError,
-    },
-
-    /// Invalid server port value
-    #[error("Invalid SERVER_PORT value")]
-    InvalidServerPort {
-        #[source]
-        source: std::num::ParseIntError,
-    },
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::error::AppError;
     use std::env;
     use std::sync::Mutex;
 
@@ -82,6 +65,6 @@ mod tests {
         env::set_var("DATABASE_URL", "postgres://example");
 
         let result = Config::from_env();
-        assert!(matches!(result, Err(ConfigError::InvalidServerPort { .. })));
+        assert!(matches!(result, Err(AppError::InvalidServerPort { .. })));
     }
 }
