@@ -20,7 +20,8 @@ FROM debian:bookworm-slim
 WORKDIR /app
 
 # Install required runtime dependencies
-RUN apt-get update && apt-get install -y \
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
