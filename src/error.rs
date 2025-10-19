@@ -129,4 +129,44 @@ mod tests {
         let app_err: AppError = env_err.into();
         assert!(matches!(app_err, AppError::EnvVar(_)));
     }
+
+    #[test]
+    fn test_config_error_response_body() {
+        let err = AppError::Config("database connection failed".to_string());
+        let response = err.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_database_error_from_row_not_found() {
+        let err = AppError::Database(sqlx::Error::RowNotFound);
+        let err_string = err.to_string();
+        assert!(err_string.contains("Database error"));
+        assert!(err_string.contains("no rows returned"));
+    }
+
+    #[test]
+    fn test_internal_error_with_context() {
+        let err = AppError::Internal(anyhow::anyhow!("file not found: /path/to/file"));
+        let err_string = err.to_string();
+        assert!(err_string.contains("Internal server error"));
+    }
+
+    #[test]
+    fn test_env_var_error_not_unicode() {
+        let err = AppError::EnvVar(std::env::VarError::NotUnicode(std::ffi::OsString::from(
+            "invalid",
+        )));
+        let response = err.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_multiple_error_conversions() {
+        // Test chain of error conversions
+        let sqlx_err = sqlx::Error::RowNotFound;
+        let app_err: AppError = sqlx_err.into();
+        let response = app_err.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
 }

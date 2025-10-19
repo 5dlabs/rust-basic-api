@@ -72,7 +72,7 @@ async fn health_check() -> &'static str {
 mod tests {
     use super::*;
     use axum::body::Body;
-    use axum::http::{Request, StatusCode};
+    use axum::http::{Method, Request, StatusCode};
     use tower::ServiceExt;
 
     #[tokio::test]
@@ -138,6 +138,72 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_post_method() {
+        let app = create_app();
+
+        // Test POST /health (should return 405 Method Not Allowed)
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_head_method() {
+        let app = create_app();
+
+        // Test HEAD /health
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::HEAD)
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // HEAD requests should succeed with same status but no body
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_multiple_health_checks() {
+        // Verify multiple calls work correctly
+        for _ in 0..5 {
+            let response = health_check().await;
+            assert_eq!(response, "OK");
+        }
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_with_query_params() {
+        let app = create_app();
+
+        // Test /health with query parameters (should still work)
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health?test=1")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[test]
