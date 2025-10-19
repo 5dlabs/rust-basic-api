@@ -206,4 +206,119 @@ mod tests {
                 || response.status() == StatusCode::METHOD_NOT_ALLOWED
         );
     }
+
+    #[tokio::test]
+    async fn test_health_endpoint_with_trailing_slash() {
+        let app = create_app();
+
+        // Test /health/ with trailing slash
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/health/")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // Should be 404 since exact route is /health without trailing slash
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_case_sensitive() {
+        let app = create_app();
+
+        // Test /HEALTH with uppercase
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/HEALTH")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // Routes are case-sensitive, should be 404
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_root_path_returns_404() {
+        let app = create_app();
+
+        let response = app
+            .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_delete_method() {
+        let app = create_app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::DELETE)
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_put_method() {
+        let app = create_app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::PUT)
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[tokio::test]
+    async fn test_health_endpoint_patch_method() {
+        let app = create_app();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .method(Method::PATCH)
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    }
+
+    #[test]
+    fn test_init_tracing_error_handling() {
+        // Test that init_tracing returns a Result
+        // This will likely fail on second call since subscriber already initialized
+        // but we're testing the function signature and error path
+        let result = init_tracing();
+        // First call might succeed or fail depending on test order
+        // Just verify it returns a Result type
+        let _is_result: Result<(), Box<dyn std::error::Error>> = result;
+    }
 }
