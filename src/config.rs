@@ -84,4 +84,69 @@ mod tests {
         let result = Config::from_env();
         assert!(matches!(result, Err(ConfigError::InvalidServerPort { .. })));
     }
+
+    #[test]
+    fn test_missing_database_url() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
+        env::remove_var("DATABASE_URL");
+        env::set_var("SERVER_PORT", "3000");
+
+        let result = Config::from_env();
+        assert!(matches!(result, Err(ConfigError::MissingEnvVar { .. })));
+    }
+
+    #[test]
+    fn test_valid_config() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+
+        env::set_var("DATABASE_URL", "postgres://user:pass@localhost/db");
+        env::set_var("SERVER_PORT", "8080");
+
+        let config = Config::from_env().expect("config loads successfully");
+        assert_eq!(config.database_url, "postgres://user:pass@localhost/db");
+        assert_eq!(config.server_port, 8080);
+    }
+
+    #[test]
+    fn test_config_clone() {
+        let config = Config {
+            database_url: "postgres://test".to_string(),
+            server_port: 3000,
+        };
+        let cloned = config.clone();
+        assert_eq!(cloned.database_url, "postgres://test");
+        assert_eq!(cloned.server_port, 3000);
+    }
+
+    #[test]
+    fn test_config_debug() {
+        let config = Config {
+            database_url: "postgres://test".to_string(),
+            server_port: 3000,
+        };
+        let debug_str = format!("{config:?}");
+        assert!(debug_str.contains("postgres://test"));
+        assert!(debug_str.contains("3000"));
+    }
+
+    #[test]
+    fn test_config_error_missing_env_var_display() {
+        let err = ConfigError::MissingEnvVar {
+            key: "TEST_VAR",
+            source: env::VarError::NotPresent,
+        };
+        let err_string = err.to_string();
+        assert!(err_string.contains("Missing required environment variable"));
+        assert!(err_string.contains("TEST_VAR"));
+    }
+
+    #[test]
+    fn test_config_error_invalid_port_display() {
+        let err = ConfigError::InvalidServerPort {
+            source: "abc".parse::<u16>().unwrap_err(),
+        };
+        let err_string = err.to_string();
+        assert!(err_string.contains("Invalid SERVER_PORT value"));
+    }
 }
