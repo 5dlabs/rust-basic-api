@@ -39,3 +39,8 @@ hooks/
 
 # Environment files with secrets
 .env
+
+# Code coverage reports
+lcov.info
+*.profraw
+*.profdata
