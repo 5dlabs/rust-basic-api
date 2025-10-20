@@ -1,4 +1,6 @@
 mod config;
+// Error module is defined for future API error handling
+// Currently not used in basic setup but will be essential for database operations
 #[allow(dead_code)]
 mod error;
 mod models;
