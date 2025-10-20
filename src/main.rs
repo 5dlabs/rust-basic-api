@@ -5,7 +5,7 @@ mod models;
 mod repository;
 mod routes;
 
-use axum::{routing::get, Router};
+use axum::Router;
 use config::Config;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -76,14 +76,7 @@ fn init_tracing() {
 ///
 /// A configured `Router` with all application routes
 pub fn create_app() -> Router {
-    Router::new().route("/health", get(health_check))
-}
-
-/// Health check endpoint handler
-///
-/// Returns "OK" to indicate the service is running
-async fn health_check() -> &'static str {
-    "OK"
+    routes::register_routes()
 }
 
 #[cfg(test)]
@@ -92,12 +85,6 @@ mod tests {
     use axum::body::Body;
     use axum::http::{Method, Request, StatusCode};
     use tower::ServiceExt;
-
-    #[tokio::test]
-    async fn test_health_check() {
-        let response = health_check().await;
-        assert_eq!(response, "OK");
-    }
 
     #[tokio::test]
     async fn test_create_app() {

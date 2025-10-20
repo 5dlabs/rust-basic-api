@@ -1,4 +1,4 @@
-use dotenvy::dotenv;
+use dotenv::dotenv;
 use std::env;
 
 /// Application configuration loaded from environment variables
