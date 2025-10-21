@@ -68,7 +68,7 @@ mod tests {
         let _guard = ENV_MUTEX.lock().unwrap();
 
         env::remove_var("SERVER_PORT");
-        env::set_var("DATABASE_URL", "postgres://example");
+        env::set_var("DATABASE_URL", "database-url-placeholder");
 
         let config = Config::from_env().expect("config loads with defaults");
         assert_eq!(config.server_port, 3000);
@@ -79,7 +79,7 @@ mod tests {
         let _guard = ENV_MUTEX.lock().unwrap();
 
         env::set_var("SERVER_PORT", "invalid");
-        env::set_var("DATABASE_URL", "postgres://example");
+        env::set_var("DATABASE_URL", "database-url-placeholder");
 
         let result = Config::from_env();
         assert!(matches!(result, Err(ConfigError::InvalidServerPort { .. })));
@@ -100,33 +100,33 @@ mod tests {
     fn test_valid_config() {
         let _guard = ENV_MUTEX.lock().unwrap();
 
-        env::set_var("DATABASE_URL", "postgres://user:pass@localhost/db");
+        env::set_var("DATABASE_URL", "database-url-placeholder");
         env::set_var("SERVER_PORT", "8080");
 
         let config = Config::from_env().expect("config loads successfully");
-        assert_eq!(config.database_url, "postgres://user:pass@localhost/db");
+        assert_eq!(config.database_url, "database-url-placeholder");
         assert_eq!(config.server_port, 8080);
     }
 
     #[test]
     fn test_config_clone() {
         let config = Config {
-            database_url: "postgres://test".to_string(),
+            database_url: "database-url-placeholder".to_string(),
             server_port: 3000,
         };
         let cloned = config.clone();
-        assert_eq!(cloned.database_url, "postgres://test");
+        assert_eq!(cloned.database_url, "database-url-placeholder");
         assert_eq!(cloned.server_port, 3000);
     }
 
     #[test]
     fn test_config_debug() {
         let config = Config {
-            database_url: "postgres://test".to_string(),
+            database_url: "database-url-placeholder".to_string(),
             server_port: 3000,
         };
         let debug_str = format!("{config:?}");
-        assert!(debug_str.contains("postgres://test"));
+        assert!(debug_str.contains("database-url-placeholder"));
         assert!(debug_str.contains("3000"));
     }
 

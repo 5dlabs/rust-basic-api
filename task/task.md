@@ -165,7 +165,7 @@ CMD ["./rust-basic-api"]
 Create `.env.example`:
 
 ```
-DATABASE_URL=postgresql://user:password@your-database-host:5432/your-database
+DATABASE_URL=<database_url>
 SERVER_PORT=3000
 RUST_LOG=info
 ```
