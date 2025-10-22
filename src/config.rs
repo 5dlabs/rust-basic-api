@@ -1,3 +1,4 @@
+#[cfg(not(test))]
 use dotenv::dotenv;
 use std::env;
 
@@ -17,6 +18,8 @@ impl Config {
     ///
     /// Returns an error if required or malformed environment variables are encountered
     pub fn from_env() -> Result<Self, ConfigError> {
+        // Only load .env file in non-test builds
+        #[cfg(not(test))]
         dotenv().ok();
 
         let database_url = env::var("DATABASE_URL").map_err(|err| ConfigError::MissingEnvVar {
