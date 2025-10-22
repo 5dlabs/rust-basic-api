@@ -12,11 +12,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user for security
+RUN useradd -m -u 1000 -s /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
 # Copy the pre-built binary from CI build step
 COPY rust-basic-api /app/rust-basic-api
 
-# Ensure binary is executable
-RUN chmod +x /app/rust-basic-api
+# Ensure binary is executable and owned by appuser
+RUN chmod +x /app/rust-basic-api && \
+    chown appuser:appuser /app/rust-basic-api
+
+# Switch to non-root user
+USER appuser
 
 # Expose the application port
 EXPOSE 3000
