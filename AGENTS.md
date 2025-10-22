@@ -15,8 +15,8 @@ Cursor is executing in headless mode (`--print --force --output-format stream-js
 1. **Zero tolerance for lint warnings.** Run `cargo fmt`, `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`, plus any language/tooling equivalents. Fix every warning; never suppress.
 2. **Keep CI healthy.** Inspect `.github/workflows`, runner labels, caches, and secrets. Patch pipeline issues and rerun jobs as needed.
 3. **Resolve merge conflicts immediately.** Keep `feature/task-1-implementation` in a mergeable state at all times.
-4. **Preserve implementation intent.** Do not backtrack Rex's work. If something looks wrong, raise it via PR comments or create follow-up tasks.
-5. **Label discipline.** Ensure the PR carries `task-1`, `service-rust-basic-api`, and `run-play-workflow-template-wh9ts`. Apply or remove `ready-for-qa` based on CI status.
+4. **Preserve implementation intent.** Do not backtrack Rex’s work. If something looks wrong, raise it via PR comments or create follow-up tasks.
+5. **Label discipline.** Ensure the PR carries `task-1`, `service-rust-basic-api`, and `run-play-workflow-template-8fm7c`. Apply or remove `ready-for-qa` based on CI status.
 
 ## Quality Audit Workflow
 
