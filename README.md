@@ -8,9 +8,10 @@ A production-ready REST API built with Rust, using the Axum web framework and Po
 - 🔄 Async runtime powered by [Tokio](https://tokio.rs/)
 - 🗄️ PostgreSQL database integration via [SQLx](https://github.com/launchbadge/sqlx)
 - 📝 Structured logging with [tracing](https://github.com/tokio-rs/tracing)
-- 🔧 Environment-based configuration
+- 🔧 Environment-based configuration with [dotenvy](https://github.com/allan2/dotenvy)
 - 🐳 Docker containerization with multi-stage builds
 - ✅ Comprehensive test coverage
+- 🔒 Security-focused with maintained dependencies
 
 ## Quick Start
 

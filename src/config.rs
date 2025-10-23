@@ -1,5 +1,5 @@
 #[cfg(not(test))]
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use std::env;
 
 /// Application configuration loaded from environment variables
