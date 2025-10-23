@@ -62,7 +62,7 @@ The application is configured via environment variables:
 
 Example `.env` file:
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/postgres
+DATABASE_URL="postgres://localhost:5432/dbname"
 SERVER_PORT=3000
 RUST_LOG=rust_basic_api=info,tower_http=debug
 ```
