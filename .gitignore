@@ -24,3 +24,23 @@ target
 # Added by cargo
 
 /target
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
+
+# Hook files - never commit
+hooks/
+.hooks/
+**/hooks/
+
+# Environment files with secrets
+.env
+
+# Code coverage reports
+lcov.info
+*.profraw
+*.profdata
