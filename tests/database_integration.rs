@@ -142,6 +142,7 @@ async fn test_users_indexes_exist() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_user_insertion() {
     if std::env::var("DATABASE_URL").is_err() {
         // Test skipped, no database configured
@@ -170,6 +171,7 @@ async fn test_user_insertion() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_email_unique_constraint() {
     if std::env::var("DATABASE_URL").is_err() {
         // Test skipped, no database configured
@@ -204,6 +206,7 @@ async fn test_email_unique_constraint() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_updated_at_trigger() {
     if std::env::var("DATABASE_URL").is_err() {
         // Test skipped, no database configured
@@ -227,16 +230,19 @@ async fn test_updated_at_trigger() {
 
     let initial_updated_at = user.updated_at;
 
-    // Wait a bit to ensure timestamp difference
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Wait to ensure timestamp difference (increased for reliability)
+    tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 
     // Update the user
-    sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
+    let rows_affected = sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
         .bind("Updated Name")
         .bind(user.id)
         .execute(&pool)
         .await
-        .expect("Failed to update user");
+        .expect("Failed to update user")
+        .rows_affected();
+
+    assert_eq!(rows_affected, 1, "Update should affect exactly one row");
 
     // Fetch updated record
     let updated_user = sqlx::query_as::<_, UserTimestamps>(
@@ -261,6 +267,7 @@ async fn test_updated_at_trigger() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_not_null_constraints() {
     if std::env::var("DATABASE_URL").is_err() {
         // Test skipped, no database configured
@@ -297,6 +304,7 @@ async fn test_not_null_constraints() {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_default_timestamps() {
     if std::env::var("DATABASE_URL").is_err() {
         // Test skipped, no database configured
