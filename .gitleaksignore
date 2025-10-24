@@ -1,0 +1,3 @@
+# Gitleaks ignore file
+# Test database connection strings are constructed programmatically in test code
+# using obviously fake credentials to avoid false positive secret detection
