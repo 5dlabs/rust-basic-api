@@ -35,6 +35,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      # Volume mounting for hot-reload development
+      - ./src:/app/src:ro
+      - ./Cargo.toml:/app/Cargo.toml:ro
+      - ./Cargo.lock:/app/Cargo.lock:ro
+      - ./migrations:/app/migrations:ro
     networks:
       - rust-api-network
     restart: unless-stopped

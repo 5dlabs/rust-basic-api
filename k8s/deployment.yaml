@@ -4,22 +4,22 @@ metadata:
   name: rust-basic-api
   labels:
     app: rust-basic-api
-    version: v1
+    tier: backend
 spec:
   replicas: 3
-  selector:
-    matchLabels:
-      app: rust-basic-api
   strategy:
     type: RollingUpdate
     rollingUpdate:
+      maxUnavailable: 1
       maxSurge: 1
-      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: rust-basic-api
   template:
     metadata:
       labels:
         app: rust-basic-api
-        version: v1
+        tier: backend
     spec:
       containers:
       - name: rust-basic-api
@@ -35,10 +35,10 @@ spec:
             secretKeyRef:
               name: rust-basic-api-secrets
               key: database-url
-        - name: SERVER_PORT
-          value: "3000"
         - name: RUST_LOG
           value: "rust_basic_api=info,tower_http=debug"
+        - name: SERVER_PORT
+          value: "3000"
         resources:
           requests:
             memory: "128Mi"
@@ -46,28 +46,44 @@ spec:
           limits:
             memory: "512Mi"
             cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          successThreshold: 1
-          failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /health
             port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 20
+          timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 3
         securityContext:
           allowPrivilegeEscalation: false
-          runAsNonRoot: false
+          runAsNonRoot: true
+          runAsUser: 1001
           readOnlyRootFilesystem: false
           capabilities:
             drop:
             - ALL
+      restartPolicy: Always
+      securityContext:
+        fsGroup: 1001
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rust-basic-api-secrets
+type: Opaque
+stringData:
+  # IMPORTANT: Replace with actual database URL in production
+  # This is a placeholder for local testing only
+  database-url: "postgresql://postgres:postgres@postgres-service:5432/postgres"
