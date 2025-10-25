@@ -234,6 +234,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(coverage, ignore)]
     async fn test_get_user_route_exists() {
         let app = create_test_app();
 
@@ -297,6 +298,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[cfg_attr(coverage, ignore)]
     async fn test_delete_user_route_exists() {
         let app = create_test_app();
 
