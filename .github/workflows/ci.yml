@@ -119,7 +119,7 @@ jobs:
           shared-key: ${{ env.CACHE_KEY }}
 
       - name: Run database migrations
-        run: cargo install sqlx-cli --no-default-features --features postgres && sqlx migrate run
+        run: cargo install sqlx-cli --no-default-features --features postgres --force && sqlx migrate run
 
       - name: Run integration tests
         run: cargo test --workspace --all-features --test '*'
@@ -163,7 +163,7 @@ jobs:
         run: cargo install cargo-llvm-cov --locked
 
       - name: Run database migrations
-        run: cargo install sqlx-cli --no-default-features --features postgres && sqlx migrate run
+        run: cargo install sqlx-cli --no-default-features --features postgres --force && sqlx migrate run
 
       - name: Generate coverage report
         run: cargo llvm-cov --workspace --all-features --fail-under-lines 90 --html
