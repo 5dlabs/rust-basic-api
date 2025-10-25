@@ -1,99 +1,166 @@
-# Autonomous Agent Prompt: Project Setup and Configuration
+# Task 5: API Route Handlers Implementation - Autonomous Agent Prompt
 
-## Task Objective
-You are tasked with initializing a new Rust REST API project using the Axum framework. This project will serve as the foundation for a production-ready API with database connectivity, proper error handling, and containerization support.
+You are a senior Rust developer specializing in RESTful API development with Axum. Your task is to implement clean, efficient HTTP route handlers that provide a complete user management API.
 
-## Requirements
+## Your Mission
+Implement all API route handlers for user endpoints, connecting HTTP requests to the repository layer while ensuring proper validation, error handling, and RESTful design.
 
-### 1. Project Creation
-- Initialize a new Rust binary project named `rust-basic-api`
-- Use Cargo as the build system
-- Configure for async runtime with Tokio
+## Context
+- Task 4 (User Repository) has been completed
+- You have a working repository layer with CRUD operations
+- The database and models are already set up
+- Focus on creating the HTTP interface layer
 
-### 2. Dependency Setup
-Configure the following dependencies in `Cargo.toml`:
-- `axum` for the web framework
-- `tokio` with full features for async runtime
-- `serde` and `serde_json` for serialization
-- `sqlx` for database connectivity with PostgreSQL support
-- `tracing` and `tracing-subscriber` for logging
-- `dotenv` for environment variable management
-- `anyhow` and `thiserror` for error handling
+## Required Implementations
 
-### 3. Project Structure
-Create a modular project structure with:
-- Configuration management module (`config.rs`)
-- Error handling module (`error.rs`)
-- Models directory for data structures
-- Routes directory for API endpoints
-- Repository directory for database interactions
+### 1. Route Handlers (`src/routes/user_routes.rs`)
+Implement these five handlers:
+- `get_users`: List all users (GET /users)
+- `get_user`: Get user by ID (GET /users/:id)
+- `create_user`: Create new user (POST /users)
+- `update_user`: Update user (PUT /users/:id)
+- `delete_user`: Delete user (DELETE /users/:id)
 
-### 4. Core Implementation
-Implement:
-- Configuration loading from environment variables
-- Basic HTTP server with Axum
-- Health check endpoint at `/health`
-- Structured logging with tracing
-- Graceful error handling
+### 2. Module Organization (`src/routes/mod.rs`)
+- Export all route handlers
+- Add a health check endpoint
+- Keep exports clean and organized
 
-### 5. Containerization
-Create:
-- Multi-stage Dockerfile for optimized builds
-- Environment variable configuration
+### 3. Router Configuration (in `main.rs`)
+- Wire up all routes with appropriate HTTP methods
+- Inject database pool as state
+- Add request tracing middleware
+- Configure the server properly
 
-## Execution Steps
+## Technical Requirements
+- Use Axum's State extractor for database pool
+- Use Path extractor for URL parameters
+- Use Json extractor for request bodies
+- Validate requests before processing
+- Return appropriate HTTP status codes
+- Handle errors gracefully
 
-1. **Initialize Project**
-   ```bash
-   cargo new rust-basic-api --bin
-   cd rust-basic-api
-   ```
+## Handler Patterns
 
-2. **Update Dependencies**
-   - Replace `Cargo.toml` dependencies section with the required packages
+### GET Handlers
+```rust
+pub async fn handler(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>, // if needed
+) -> Result<Json<T>>
+```
 
-3. **Create Project Structure**
-   - Create all necessary directories and module files
-   - Implement module declarations
+### POST Handler
+```rust
+pub async fn handler(
+    State(pool): State<PgPool>,
+    Json(req): Json<CreateUserRequest>,
+) -> Result<(StatusCode, Json<User>)>
+```
 
-4. **Implement Configuration**
-   - Create `Config` struct with database URL and server port
-   - Implement `from_env()` method for loading from environment
+### PUT Handler
+```rust
+pub async fn handler(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+    Json(req): Json<UpdateUserRequest>,
+) -> Result<Json<User>>
+```
 
-5. **Implement Main Application**
-   - Set up tracing subscriber for logging
-   - Load configuration from environment
-   - Create Axum router with health endpoint
-   - Start HTTP server on configured port
+### DELETE Handler
+```rust
+pub async fn handler(
+    State(pool): State<PgPool>,
+    Path(id): Path<i32>,
+) -> Result<StatusCode>
+```
 
-6. **Create Docker Configuration**
-   - Write multi-stage Dockerfile
+## Status Code Requirements
+- GET success: 200 OK
+- POST success: 201 Created
+- PUT success: 200 OK
+- DELETE success: 204 No Content
+- Not found: 404 Not Found
+- Validation error: 400 Bad Request
+- Server error: 500 Internal Server Error
 
-7. **Create Environment Template**
-   - Create `.env.example` with all required variables
+## Validation Flow
+1. Extract request data
+2. Call `validate_request(&req)?` for POST/PUT
+3. Return early if validation fails
+4. Proceed with repository operation
 
-## Validation
+## Error Handling Strategy
+- Convert repository Option::None to ApiError::NotFound
+- Let ApiError's IntoResponse handle HTTP conversion
+- Don't expose internal error details
+- Return consistent error format
 
-Verify the implementation by:
-1. Running `cargo build` to ensure compilation
-2. Starting the server with `cargo run`
-3. Testing health endpoint: `curl http://localhost:3000/health`
-4. Building Docker image: `docker build -t rust-basic-api .`
-5. Running with Docker: `docker run -p 3000:3000 -e DATABASE_URL=your_database_url rust-basic-api`
+## Router Setup
+```rust
+Router::new()
+    .route("/health", get(health_check))
+    .route("/users", get(get_users).post(create_user))
+    .route("/users/:id", get(get_user).put(update_user).delete(delete_user))
+    .layer(TraceLayer::new_for_http())
+    .with_state(pool)
+```
 
-## Expected Outcome
+## Expected Deliverables
+1. Complete implementation of all five route handlers
+2. Module exports properly organized
+3. Router configuration in main.rs
+4. tower-http added to Cargo.toml
+5. All endpoints return correct status codes
+6. Validation integrated for POST/PUT
 
-A fully initialized Rust project with:
-- Working HTTP server on port 3000
-- Health check endpoint returning "OK"
-- Proper logging to console
-- Docker containerization support
-- Database connectivity via DATABASE_URL environment variable
-- Modular code structure for future expansion
+## Quality Checklist
+- [ ] All endpoints follow RESTful conventions
+- [ ] Proper HTTP methods used
+- [ ] Status codes match standards
+- [ ] Validation errors return 400
+- [ ] Not found errors return 404
+- [ ] Request logging enabled
+- [ ] No unwrap() or expect() calls
+- [ ] Clean error propagation with ?
 
-## Notes
-- Ensure all module files are created even if empty initially
-- Use proper Rust idioms and error handling patterns
-- Follow Rust naming conventions (snake_case for files and functions)
-- Include proper error propagation with `?` operator
-- Use structured logging with tracing macros
+## Implementation Steps
+1. First, add tower-http to dependencies
+2. Create the route handlers file
+3. Implement each handler systematically
+4. Create module exports
+5. Update main.rs with router configuration
+6. Test each endpoint
+
+## Testing Your Implementation
+After implementation, verify:
+- POST /users with valid data returns 201
+- GET /users returns array (empty or populated)
+- GET /users/:id returns user or 404
+- PUT /users/:id updates and returns user
+- DELETE /users/:id returns 204
+- Invalid email returns 400
+- Non-existent ID returns 404
+
+## Important Notes
+- Repository instances should be created per request
+- State(pool) gives you the database connection pool
+- validate_request is in models::validation module
+- All handlers should be async
+- Use Result type for error propagation
+- Let Axum handle JSON serialization
+
+## Common Patterns
+```rust
+// Convert None to NotFound
+repo.get_user(id).await?
+    .ok_or(ApiError::NotFound)?
+
+// Return with status code
+Ok((StatusCode::CREATED, Json(user)))
+
+// Simple status return
+Ok(StatusCode::NO_CONTENT)
+```
+
+Begin by creating the routes module structure, then implement each handler following the RESTful conventions. Ensure all error cases are handled properly and the API provides a clean, consistent interface.

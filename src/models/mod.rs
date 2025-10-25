@@ -1,2 +1,5 @@
 // Models module - data structures and business entities
-// This module will contain database models, DTOs, and domain entities
+pub mod user;
+pub mod validation;
+
+pub use user::{CreateUserRequest, UpdateUserRequest, User};

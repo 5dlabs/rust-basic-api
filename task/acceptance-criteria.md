@@ -1,124 +1,291 @@
-# Acceptance Criteria: Project Setup and Configuration
+# Task 5: API Route Handlers Implementation - Acceptance Criteria
 
-## Required Deliverables
+## Definition of Done
+This task is considered complete when all the following criteria are met:
 
-### 1. Project Structure
-- [ ] Rust project created with name `rust-basic-api`
-- [ ] Project type is binary (not library)
-- [ ] All required directories exist:
-  - [ ] `src/models/`
-  - [ ] `src/routes/`
-  - [ ] `src/repository/`
+## Core Requirements
 
-### 2. Source Files
-- [ ] `src/main.rs` exists and contains:
-  - [ ] Module declarations for all submodules
-  - [ ] Tokio async main function
-  - [ ] Tracing initialization
-  - [ ] Configuration loading
-  - [ ] HTTP server setup
-  - [ ] Health check endpoint
-- [ ] `src/config.rs` exists and contains:
-  - [ ] `Config` struct with database_url and server_port fields
-  - [ ] `from_env()` method implementation
-  - [ ] Proper error handling for missing environment variables
-- [ ] `src/error.rs` exists (can be empty initially)
-- [ ] `src/models/mod.rs` exists
-- [ ] `src/routes/mod.rs` exists
-- [ ] `src/repository/mod.rs` exists
+### 1. Route Handler Implementation
+- [ ] `src/routes/user_routes.rs` file exists and compiles
+- [ ] All five route handlers implemented (get_users, get_user, create_user, update_user, delete_user)
+- [ ] Each handler properly extracts request data
+- [ ] Handlers create repository instances correctly
+- [ ] All handlers are async functions
 
-### 3. Configuration Files
-- [ ] `Cargo.toml` contains all required dependencies:
-  - [ ] axum = "0.6.0" or compatible version
-  - [ ] tokio with "full" features
-  - [ ] serde with "derive" feature
-  - [ ] serde_json
-  - [ ] sqlx with PostgreSQL and async runtime features
-  - [ ] tracing and tracing-subscriber
-  - [ ] dotenv
-  - [ ] anyhow
-  - [ ] thiserror
-- [ ] `.env.example` exists with:
-  - [ ] DATABASE_URL example
-  - [ ] SERVER_PORT example
-  - [ ] RUST_LOG example
+### 2. Request Processing
+- [ ] State extractor used for database pool
+- [ ] Path extractor used for ID parameters
+- [ ] Json extractor used for request bodies
+- [ ] Validation called before processing POST/PUT
+- [ ] Proper error propagation with ? operator
 
-### 4. Containerization
-- [ ] `Dockerfile` exists with:
-  - [ ] Multi-stage build (builder and runtime stages)
-  - [ ] Rust base image for building
-  - [ ] Slim runtime image
-  - [ ] Proper COPY commands
-  - [ ] EXPOSE 3000 directive
+### 3. Response Formatting
+- [ ] All successful responses return JSON
+- [ ] Error responses use consistent format
+- [ ] Appropriate HTTP status codes returned
+- [ ] Empty responses for DELETE (204)
 
-## Functional Tests
+### 4. Module Organization
+- [ ] `src/routes/mod.rs` exports all handlers
+- [ ] Health check endpoint included
+- [ ] Clean module structure
 
-### 1. Build Test
-```bash
-cd rust-basic-api
-cargo build
+### 5. Router Configuration
+- [ ] Main.rs updated with all routes
+- [ ] Routes mapped to correct HTTP methods
+- [ ] Database pool injected as state
+- [ ] TraceLayer middleware configured
+
+### 6. Dependencies
+- [ ] tower-http added to Cargo.toml with trace feature
+- [ ] Project compiles with new dependency
+
+## Functional Test Cases
+
+### Test Case 1: Create User (POST /users)
+```http
+POST /users
+Content-Type: application/json
+
+{
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+Expected Response:
+Status: 201 Created
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "created_at": "...",
+  "updated_at": "..."
+}
 ```
-**Expected**: Build completes successfully without errors
 
-### 2. Run Test
-```bash
-cargo run
-```
-**Expected**: 
-- Server starts without panics
-- Log message shows "Listening on 0.0.0.0:3000"
-- Process continues running
+### Test Case 2: Get All Users (GET /users)
+```http
+GET /users
 
-### 3. Health Check Test
-```bash
-curl http://localhost:3000/health
+Expected Response:
+Status: 200 OK
+[
+  {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "created_at": "...",
+    "updated_at": "..."
+  }
+]
 ```
-**Expected**: Response body contains "OK"
 
-### 4. Environment Variable Test
-```bash
-SERVER_PORT=8080 cargo run
-```
-**Expected**: Server starts on port 8080 instead of 3000
+### Test Case 3: Get User by ID (GET /users/:id)
+```http
+GET /users/1
 
-### 5. Docker Build Test
-```bash
-docker build -t rust-basic-api .
+Expected Response:
+Status: 200 OK
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "created_at": "...",
+  "updated_at": "..."
+}
 ```
-**Expected**: Docker image builds successfully
 
-### 6. Container Health Check
-```bash
-docker run -p 3000:3000 -e DATABASE_URL=your_database_url rust-basic-api
-curl http://localhost:3000/health
+### Test Case 4: Update User (PUT /users/:id)
+```http
+PUT /users/1
+Content-Type: application/json
+
+{
+  "name": "Jane Doe"
+}
+
+Expected Response:
+Status: 200 OK
+{
+  "id": 1,
+  "name": "Jane Doe",
+  "email": "john@example.com",
+  "created_at": "...",
+  "updated_at": "..." // newer timestamp
+}
 ```
-**Expected**: Response "OK" from containerized application
+
+### Test Case 5: Delete User (DELETE /users/:id)
+```http
+DELETE /users/1
+
+Expected Response:
+Status: 204 No Content
+(no body)
+```
+
+## Error Handling Test Cases
+
+### Validation Error
+```http
+POST /users
+Content-Type: application/json
+
+{
+  "name": "",
+  "email": "invalid-email"
+}
+
+Expected Response:
+Status: 400 Bad Request
+{
+  "error": "VALIDATION_ERROR",
+  "message": "..."
+}
+```
+
+### Not Found Error
+```http
+GET /users/9999
+
+Expected Response:
+Status: 404 Not Found
+{
+  "error": "NOT_FOUND",
+  "message": "Resource not found"
+}
+```
+
+### Missing Required Fields
+```http
+POST /users
+Content-Type: application/json
+
+{
+  "name": "John"
+}
+
+Expected Response:
+Status: 400 Bad Request or 422 Unprocessable Entity
+```
 
 ## Non-Functional Requirements
 
-### Code Quality
-- [ ] Code follows Rust idioms and best practices
-- [ ] Proper use of Result types for error handling
-- [ ] No compiler warnings
-- [ ] Consistent formatting (cargo fmt)
-- [ ] No clippy warnings (cargo clippy)
-
-### Documentation
-- [ ] Code includes appropriate comments
-- [ ] Module-level documentation where needed
-- [ ] README.md with basic project information (optional)
-
 ### Performance
-- [ ] Server starts within 2 seconds
-- [ ] Health endpoint responds within 10ms
-- [ ] Memory usage under 50MB at idle
+- [ ] Response time < 100ms for single operations
+- [ ] Can handle 100 concurrent requests
+- [ ] No memory leaks in handlers
+- [ ] Efficient database pool usage
 
-## Definition of Done
+### Security
+- [ ] Input validation prevents injection
+- [ ] Error messages don't leak sensitive info
+- [ ] Headers properly set for JSON responses
+- [ ] No credentials in responses
 
-1. All required files and directories exist
-2. Project compiles without errors or warnings
-3. Server runs and responds to health checks
-4. Environment variable configuration works
-5. Docker image builds successfully
-6. All functional tests pass
-7. Code meets quality standards
+### Code Quality
+- [ ] No compiler warnings
+- [ ] No use of unwrap() or expect()
+- [ ] Consistent error handling
+- [ ] Clear function signatures
+- [ ] Follows Rust conventions
+
+### Logging
+- [ ] Request method and path logged
+- [ ] Response status logged
+- [ ] Request duration tracked
+- [ ] Errors logged with context
+
+## HTTP Standards Compliance
+
+### RESTful Design
+- [ ] GET is idempotent and safe
+- [ ] POST creates resources
+- [ ] PUT updates resources
+- [ ] DELETE removes resources
+- [ ] Proper use of status codes
+
+### Status Code Requirements
+- [ ] 200 OK for successful GET/PUT
+- [ ] 201 Created for successful POST
+- [ ] 204 No Content for successful DELETE
+- [ ] 400 Bad Request for validation errors
+- [ ] 404 Not Found for missing resources
+- [ ] 500 Internal Server Error for server issues
+
+### Content Type Handling
+- [ ] Accepts application/json for POST/PUT
+- [ ] Returns application/json for all responses
+- [ ] Proper Content-Type headers set
+
+## Integration Requirements
+- [ ] Works with SqlxUserRepository from Task 4
+- [ ] Uses User model from Task 3
+- [ ] Uses ApiError from Task 3
+- [ ] Uses validation from Task 3
+- [ ] Compatible with database from Task 2
+
+## Router Configuration
+- [ ] All routes properly mapped
+- [ ] Middleware chain correct
+- [ ] State injection working
+- [ ] Server binds to correct address
+- [ ] Graceful shutdown supported
+
+## Testing Requirements
+- [ ] All endpoints manually testable
+- [ ] curl/Postman collection works
+- [ ] Integration tests can be written
+- [ ] Error cases properly tested
+- [ ] Concurrent requests handled
+
+## API Consistency
+- [ ] Consistent URL patterns (/users, /users/:id)
+- [ ] Consistent error format across endpoints
+- [ ] Consistent JSON field naming
+- [ ] Predictable behavior for all operations
+
+## Documentation
+- [ ] Each handler has clear purpose
+- [ ] Complex logic commented
+- [ ] API behavior documented
+- [ ] Example requests/responses provided
+
+## Middleware Functionality
+- [ ] Request logging active
+- [ ] Timing information captured
+- [ ] Error responses logged
+- [ ] Tracing context propagated
+
+## Verification Steps
+1. Start server with `cargo run`
+2. Test health endpoint: `curl localhost:3000/health`
+3. Create user: `curl -X POST -H "Content-Type: application/json" -d '{"name":"Test","email":"test@example.com"}' localhost:3000/users`
+4. List users: `curl localhost:3000/users`
+5. Get specific user: `curl localhost:3000/users/1`
+6. Update user: `curl -X PUT -H "Content-Type: application/json" -d '{"name":"Updated"}' localhost:3000/users/1`
+7. Delete user: `curl -X DELETE localhost:3000/users/1`
+8. Verify validation: Send invalid email format
+9. Verify 404: Request non-existent user
+
+## Performance Benchmarks
+- [ ] POST /users: < 50ms average
+- [ ] GET /users: < 30ms average
+- [ ] GET /users/:id: < 20ms average
+- [ ] PUT /users/:id: < 40ms average
+- [ ] DELETE /users/:id: < 30ms average
+
+## Rollback Plan
+If issues are found:
+1. Check route configuration in main.rs
+2. Verify handler signatures match Axum requirements
+3. Review extractor usage
+4. Check repository integration
+5. Rollback to previous working version if critical
+
+## Sign-off Checklist
+- [ ] Developer: All endpoints tested manually
+- [ ] API: RESTful standards followed
+- [ ] Performance: Response times acceptable
+- [ ] Security: Input validation working
+- [ ] Integration: Works with existing code

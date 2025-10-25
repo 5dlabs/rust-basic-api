@@ -22,10 +22,10 @@ You MUST run `gh pr create` before your work is complete. Just pushing commits i
 ## Git Workflow
 
 ### Your Current Context
-- **Repository**:
+- **Repository**: 
 - **Feature Branch**: feature/task--implementation
 - **Target Branch**: main (never push directly to this)
-- **Authentication**: GitHub App (5DLabs-Cleo - pre-configured)
+- **Authentication**: GitHub App (5DLabs-Tess - pre-configured)
 
 ### **Required Git Pattern:**
 
@@ -201,11 +201,7 @@ gh pr list --head feature/task--implementation
 - GitHub App authentication is pre-configured in the container
 - All git operations use GitHub App tokens automatically
 - Repository access: ``
-<<<<<<< HEAD
-- GitHub App: `5DLabs-Cleo`
-=======
 - GitHub App: `5DLabs-Tess`
->>>>>>> 57be930 (feat(task-1): add updated task documentation and guidelines)
 
 ### Git Commands (GitHub App-based)
 ```bash

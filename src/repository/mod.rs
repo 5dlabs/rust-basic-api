@@ -1,2 +1,4 @@
 // Repository module - database interaction layer
-// This module will contain database queries and data access logic
+pub mod user_repository;
+
+pub use user_repository::{SqlxUserRepository, UserRepository};
