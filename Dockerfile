@@ -1,7 +1,7 @@
 # Multi-stage Dockerfile for optimized Rust builds
 
 # Stage 1: Build the application
-FROM rust:1.83 as builder
+FROM rust:latest as builder
 
 WORKDIR /app
 
