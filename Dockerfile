@@ -1,18 +1,27 @@
 # Multi-stage Dockerfile for optimized Rust builds
 
 # Stage 1: Build the application
-FROM rust:1.90 as builder
+FROM rust:1.70 as builder
 
 WORKDIR /app
 
 # Copy manifests
-COPY Cargo.toml Cargo.lock* ./
+COPY Cargo.toml Cargo.lock ./
 
-# Copy source code
-COPY src ./src
+# Create dummy main.rs for dependency caching
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
 
-# Build the application in release mode
+# Build dependencies only (caching layer)
 RUN cargo build --release
+
+# Remove dummy files
+RUN rm -rf src
+
+# Copy actual source code
+COPY . .
+
+# Build the application with all features
+RUN cargo build --release --workspace
 
 # Stage 2: Create the runtime image
 FROM debian:bookworm-slim
@@ -29,8 +38,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/target/release/rust-basic-api /app/rust-basic-api
 
+# Copy database migrations
+COPY --from=builder /app/migrations /app/migrations
+
 # Expose the application port
 EXPOSE 3000
 
 # Set the entrypoint
-ENTRYPOINT ["/app/rust-basic-api"]
+CMD ["/app/rust-basic-api"]
