@@ -1,21 +1,18 @@
 # Multi-stage Dockerfile for optimized Rust builds
 
 # Stage 1: Build the application
-FROM rust:latest as builder
+FROM rust:1.83 as builder
 
 WORKDIR /app
 
 # Copy manifests for dependency caching
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy main.rs to cache dependencies
-RUN mkdir -p src && echo "fn main() {}" > src/main.rs
-
-# Build dependencies only (caching layer)
-RUN cargo build --release
-
-# Remove dummy files
-RUN rm -rf src
+# Create a dummy main.rs to cache dependencies and build
+RUN mkdir -p src && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
 
 # Copy actual source code
 COPY src ./src

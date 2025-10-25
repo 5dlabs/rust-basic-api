@@ -1,145 +1,198 @@
-# Task 6: Comprehensive Testing Setup
+# Task 7: Containerization and Deployment Setup
 
 ## Overview
-This task establishes a robust testing framework for the Rust API project, including unit tests, integration tests, test utilities, and continuous integration through GitHub Actions. The implementation ensures code quality, reliability, and maintainability through comprehensive automated testing.
+This task implements Docker containerization and Kubernetes deployment configuration for the Rust API project. It establishes a complete deployment pipeline from local development with Docker Compose to production-ready Kubernetes manifests, enabling scalable and portable deployments.
 
 ## Technical Requirements
 
-### 1. Test Infrastructure Components
-- **Test Utilities Module**: Reusable test helpers and factories
-- **Test Database Configuration**: Isolated testing environment
-- **Coverage Reporting**: Code coverage analysis with Tarpaulin
-- **CI/CD Pipeline**: Automated testing with GitHub Actions
+### 1. Container Infrastructure
+- **Multi-stage Docker Build**: Optimized image size with separate build and runtime stages
+- **Docker Compose**: Local development environment with PostgreSQL
+- **Kubernetes Manifests**: Production deployment configuration
+- **Health Probes**: Readiness and liveness checks for container health
 
-### 2. Testing Layers
-- **Unit Tests**: Testing individual functions and methods
-- **Integration Tests**: Testing API endpoints and database operations
-- **End-to-End Tests**: Testing complete workflows
-- **Performance Tests**: Basic performance benchmarking
+### 2. Deployment Components
+- **Dockerfile**: Efficient container image build process
+- **Docker Compose**: Development environment orchestration
+- **Kubernetes Deployment**: Scalable application deployment
+- **Kubernetes Service**: Load balancing and service discovery
+- **Build Scripts**: Automated image building and deployment
 
 ## Implementation Guide
 
-### Step 1: Create Test Utilities Module
-Location: `src/test_utils.rs`
+### Step 1: Create Multi-Stage Dockerfile
+Location: `Dockerfile` (project root)
 
-The test utilities module provides helper functions for creating test data:
-- User factory functions
-- Database connection helpers
-- Mock data generators
-- Test cleanup utilities
+The Dockerfile uses a two-stage build process:
+- **Build Stage**: Compiles the Rust application with all dependencies
+- **Runtime Stage**: Minimal image with only runtime requirements
 
-Key features:
-- Conditional compilation with `#[cfg(test)]`
-- Consistent test data generation
-- Timestamp handling for reproducible tests
+Key optimizations:
+- Dependency caching through layer separation
+- Minimal runtime image based on debian-slim
+- Security-focused with only necessary packages
+- Migrations included for database setup
 
-### Step 2: Configure Test Database
-Location: `.env.test`
+### Step 2: Configure Docker Compose
+Location: `docker-compose.yml`
 
-Separate test database configuration ensures:
-- Isolation from development/production data
-- Clean state for each test run
-- Parallel test execution capability
-- Debug logging for troubleshooting
+Development environment setup:
+- PostgreSQL database service
+- API service with hot-reload capability
+- Volume mounting for development
+- Network configuration for service communication
+- Environment variable management
 
-### Step 3: Database Setup Script
-Location: `scripts/setup_test_db.sh`
+### Step 3: Create Kubernetes Deployment
+Location: `k8s/deployment.yaml`
 
-Automated test database provisioning:
-- Docker container management
-- Database creation and initialization
-- Health checks and retry logic
-- Cleanup of stale containers
+Production deployment configuration:
+- Replica management (3 instances by default)
+- Resource limits and requests
+- Health check probes
+- Secret management for sensitive data
+- Rolling update strategy
 
-### Step 4: Coverage Tooling
-Integration with Tarpaulin for:
-- Line coverage analysis
-- HTML report generation
-- Coverage threshold enforcement
-- Integration with CI/CD
+### Step 4: Define Kubernetes Service
+Location: `k8s/service.yaml`
 
-### Step 5: Test Execution Script
-Location: `scripts/run_tests.sh`
+Service configuration for:
+- Internal cluster routing
+- Load balancing across pods
+- Port mapping (80 → 3000)
+- Service discovery via DNS
 
-Comprehensive test runner that:
-- Sets up test environment
-- Runs all test suites
-- Generates coverage reports
-- Provides clear output formatting
+### Step 5: Build Automation Script
+Location: `scripts/build_image.sh`
 
-### Step 6: CI/CD Workflow
-Location: `.github/workflows/ci.yml`
+Automated Docker image building:
+- Git commit-based tagging
+- Latest tag management
+- Build verification
+- Error handling
 
-GitHub Actions workflow including:
-- PostgreSQL service container
-- Rust toolchain setup
-- Dependency caching
-- Code formatting checks
-- Linting with Clippy
-- Test execution with coverage
+### Step 6: Deployment Script
+Location: `scripts/deploy_k8s.sh`
+
+Kubernetes deployment automation:
+- Namespace configuration
+- Manifest application
+- Deployment verification
+- Rollout status checking
 
 ## Dependencies
-- Task 5: Middleware and Advanced Features (for testing complex components)
-- PostgreSQL 15 for test database
-- Docker for containerized testing
-- Tarpaulin for coverage reporting
+- Task 5: Middleware and Advanced Features (application must be complete)
+- Docker Engine 20.10+
+- Kubernetes 1.24+
+- kubectl CLI tool
+- PostgreSQL 15
 
 ## File Structure
 ```
 project-root/
-├── src/
-│   └── test_utils.rs          # Test utilities module
-├── scripts/
-│   ├── setup_test_db.sh       # Database setup script
-│   └── run_tests.sh           # Test execution script
-├── .github/
-│   └── workflows/
-│       └── ci.yml             # CI/CD workflow
-├── .env.test                  # Test environment configuration
-└── coverage/                  # Coverage reports (generated)
+├── Dockerfile                  # Container image definition
+├── docker-compose.yml         # Development environment
+├── k8s/
+│   ├── deployment.yaml       # Kubernetes deployment
+│   └── service.yaml          # Kubernetes service
+└── scripts/
+    ├── build_image.sh        # Image build script
+    └── deploy_k8s.sh         # Deployment script
 ```
 
-## Testing Strategy
-1. **Unit Testing**: Fast, isolated tests for business logic
-2. **Integration Testing**: Database and API endpoint testing
-3. **Continuous Integration**: Automated testing on every push/PR
-4. **Coverage Monitoring**: Track and improve test coverage
-5. **Performance Benchmarking**: Detect performance regressions
+## Container Architecture
+
+### Docker Image Layers
+1. **Build Stage**: Full Rust toolchain for compilation
+2. **Dependency Cache**: Separate layer for dependencies
+3. **Application Build**: Source code compilation
+4. **Runtime Stage**: Minimal Debian base
+5. **Binary Copy**: Compiled application transfer
+6. **Migration Copy**: Database migration files
+
+### Kubernetes Architecture
+- **Deployment**: Manages pod replicas and updates
+- **Service**: Provides stable endpoint for pods
+- **Secrets**: Secure storage for database credentials
+- **Probes**: Health monitoring and self-healing
+
+## Deployment Strategy
+
+### Local Development
+1. Run `docker-compose up -d` to start services
+2. Access API at `http://localhost:3000`
+3. Database available at `localhost:5432`
+4. Logs available via `docker-compose logs`
+
+### Production Deployment
+1. Build image: `./scripts/build_image.sh`
+2. Push to registry (if using remote)
+3. Deploy to Kubernetes: `./scripts/deploy_k8s.sh`
+4. Monitor rollout: `kubectl rollout status deployment/rust-basic-api`
+
+## Health Monitoring
+- **Readiness Probe**: Ensures pod is ready to accept traffic
+- **Liveness Probe**: Restarts unhealthy pods
+- **Startup Probe**: (Optional) Allows slow-starting containers
+
+## Resource Management
+- **Requests**: Minimum resources guaranteed
+  - Memory: 128Mi
+  - CPU: 100m
+- **Limits**: Maximum resources allowed
+  - Memory: 512Mi
+  - CPU: 500m
 
 ## Success Criteria
-- All existing tests pass
-- Test coverage above 80%
-- CI pipeline runs successfully
-- Test database setup is automated
-- Coverage reports are generated
-- Tests run in under 2 minutes
+- Docker image builds successfully
+- Container runs without errors
+- Docker Compose environment works
+- Kubernetes deployment succeeds
+- Health probes pass
+- Service is accessible
+- Scaling works correctly
 
 ## Common Issues and Solutions
 
-### Issue: Test Database Connection Failures
-**Solution**: Ensure Docker is running and PostgreSQL container is healthy
+### Issue: Docker Build Fails
+**Solution**: Check Rust version compatibility and dependency resolution
 
-### Issue: Flaky Tests
-**Solution**: Use proper test isolation and cleanup between tests
+### Issue: Container Can't Connect to Database
+**Solution**: Verify network configuration and connection strings
 
-### Issue: Slow Test Execution
-**Solution**: Use test parallelization and optimize database queries
+### Issue: Kubernetes Pods Not Starting
+**Solution**: Check resource limits and secret configuration
 
-### Issue: Coverage Report Generation Fails
-**Solution**: Verify Tarpaulin installation and permissions
+### Issue: Health Probes Failing
+**Solution**: Ensure /health endpoint is implemented and accessible
+
+## Security Considerations
+1. Use specific base image versions (not latest)
+2. Run containers as non-root user
+3. Implement network policies in Kubernetes
+4. Use secrets for sensitive configuration
+5. Scan images for vulnerabilities
+6. Implement pod security policies
+
+## Performance Optimization
+1. Multi-stage builds reduce image size
+2. Layer caching speeds up builds
+3. Resource limits prevent resource exhaustion
+4. Horizontal scaling for load distribution
+5. Health checks ensure availability
 
 ## Best Practices
-1. Write tests alongside feature development
-2. Use descriptive test names
-3. Follow AAA pattern (Arrange, Act, Assert)
-4. Keep tests independent and isolated
-5. Use test fixtures for complex data
-6. Mock external dependencies
-7. Run tests locally before pushing
+1. Tag images with git commit SHA
+2. Use declarative Kubernetes manifests
+3. Implement gradual rollout strategies
+4. Monitor container metrics
+5. Use init containers for migrations
+6. Implement graceful shutdown
+7. Document deployment procedures
 
 ## Notes
-- Tests should be deterministic and reproducible
-- Use feature flags for test-only code
-- Consider property-based testing for complex logic
-- Document test scenarios and edge cases
-- Maintain test performance as suite grows
+- Consider using Helm for complex deployments
+- Implement CI/CD pipeline for automated deployments
+- Use container registry for image storage
+- Monitor resource usage and adjust limits
+- Implement backup and disaster recovery plans

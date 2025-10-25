@@ -1,159 +1,209 @@
-# Task 6: Comprehensive Testing Setup - Acceptance Criteria
+# Task 7: Containerization and Deployment Setup - Acceptance Criteria
 
 ## Overview
-This document defines the acceptance criteria for the comprehensive testing setup implementation. All criteria must be met for the task to be considered complete.
+This document defines the acceptance criteria for the containerization and deployment setup implementation. All criteria must be met for the task to be considered complete.
 
 ## Functional Requirements
 
-### 1. Test Utilities Module
-- [ ] **File Created**: `src/test_utils.rs` exists and is properly structured
-- [ ] **Factory Functions**: Test user creation function implemented
-- [ ] **Conditional Compilation**: Module uses `#[cfg(test)]` attribute
-- [ ] **Module Registration**: Added to lib.rs or main.rs with proper imports
-- [ ] **Extensibility**: Structure allows easy addition of new test utilities
+### 1. Dockerfile
+- [ ] **File Created**: `Dockerfile` exists in project root
+- [ ] **Multi-Stage Build**: Uses separate build and runtime stages
+- [ ] **Build Stage**: Uses Rust 1.70+ base image
+- [ ] **Dependency Caching**: Implements layer caching for dependencies
+- [ ] **Runtime Stage**: Uses debian:bullseye-slim or equivalent
+- [ ] **Binary Copy**: Correctly copies compiled binary
+- [ ] **Migrations Copy**: Includes database migration files
+- [ ] **Port Exposed**: Exposes port 3000
+- [ ] **Entrypoint Set**: Defines correct CMD or ENTRYPOINT
 
-### 2. Test Database Configuration
-- [ ] **Environment File**: `.env.test` file created with test database URL
-- [ ] **Database Isolation**: Test database separate from development
-- [ ] **Connection String**: Valid PostgreSQL connection string
-- [ ] **Logging Configuration**: Debug logging enabled for tests
-- [ ] **No Production Data**: Test database never connects to production
+### 2. Docker Compose Configuration
+- [ ] **File Created**: `docker-compose.yml` exists in project root
+- [ ] **Version Specified**: Uses version 3.8 or compatible
+- [ ] **PostgreSQL Service**: Database service configured
+- [ ] **API Service**: Application service configured
+- [ ] **Environment Variables**: DATABASE_URL and RUST_LOG set
+- [ ] **Port Mapping**: Maps 3000:3000 for API
+- [ ] **Dependencies**: API depends on PostgreSQL
+- [ ] **Volumes**: Persistent data volume for PostgreSQL
+- [ ] **Development Volumes**: Source code mounted for hot-reload
 
-### 3. Database Setup Script
-- [ ] **Script Creation**: `scripts/setup_test_db.sh` file exists
+### 3. Kubernetes Deployment
+- [ ] **File Created**: `k8s/deployment.yaml` exists
+- [ ] **API Version**: Uses apps/v1
+- [ ] **Replicas**: Configured for 3 replicas
+- [ ] **Selector Labels**: Proper label selectors defined
+- [ ] **Container Image**: References rust-basic-api:latest
+- [ ] **Port Configuration**: Container port 3000 exposed
+- [ ] **Environment Variables**: DATABASE_URL from secret
+- [ ] **Resource Requests**: Memory and CPU requests set
+- [ ] **Resource Limits**: Memory and CPU limits defined
+- [ ] **Readiness Probe**: HTTP GET to /health configured
+- [ ] **Liveness Probe**: HTTP GET to /health configured
+
+### 4. Kubernetes Service
+- [ ] **File Created**: `k8s/service.yaml` exists
+- [ ] **Service Type**: ClusterIP configured
+- [ ] **Selector**: Matches deployment labels
+- [ ] **Port Mapping**: Maps port 80 to targetPort 3000
+- [ ] **Service Name**: Named rust-basic-api
+
+### 5. Build Script
+- [ ] **File Created**: `scripts/build_image.sh` exists
 - [ ] **Executable Permission**: Script has execute permissions
-- [ ] **Docker Management**: Handles PostgreSQL container lifecycle
-- [ ] **Database Creation**: Creates test database if not exists
-- [ ] **Health Checks**: Waits for database to be ready
-- [ ] **Idempotency**: Script can be run multiple times safely
-- [ ] **Error Handling**: Graceful failure with clear messages
+- [ ] **Git Integration**: Uses git commit SHA for tagging
+- [ ] **Image Building**: Successfully builds Docker image
+- [ ] **Tagging Strategy**: Tags with both SHA and latest
+- [ ] **Error Handling**: Set -e for error exit
+- [ ] **Output Messages**: Provides clear build status
 
-### 4. Coverage Tooling
-- [ ] **Dependency Added**: Tarpaulin in Cargo.toml dev-dependencies
-- [ ] **Version Specified**: Tarpaulin version 0.25 or compatible
-- [ ] **Installation Success**: `cargo install cargo-tarpaulin` works
-- [ ] **Coverage Generation**: HTML reports generated successfully
-- [ ] **Output Directory**: Coverage reports saved to `./coverage/`
-
-### 5. Test Execution Script
-- [ ] **Script Creation**: `scripts/run_tests.sh` file exists
+### 6. Deploy Script
+- [ ] **File Created**: `scripts/deploy_k8s.sh` exists
 - [ ] **Executable Permission**: Script has execute permissions
-- [ ] **Database Setup Integration**: Calls setup_test_db.sh
-- [ ] **Coverage Execution**: Runs Tarpaulin with correct options
-- [ ] **Report Generation**: Creates HTML coverage report
-- [ ] **Clear Output**: Provides informative console output
-- [ ] **Exit Codes**: Returns appropriate exit codes
-
-### 6. CI/CD Workflow
-- [ ] **Workflow File**: `.github/workflows/ci.yml` created
-- [ ] **Trigger Configuration**: Runs on push to main and PRs
-- [ ] **PostgreSQL Service**: Database service container configured
-- [ ] **Rust Setup**: Toolchain installation configured
-- [ ] **Dependency Caching**: Cache configuration for faster builds
-- [ ] **Migration Execution**: SQLx migrations run in CI
-- [ ] **Code Quality Checks**: Formatting and Clippy checks
-- [ ] **Test Execution**: All tests run successfully
+- [ ] **Namespace Support**: Configurable namespace
+- [ ] **Manifest Application**: Applies all k8s manifests
+- [ ] **Error Handling**: Set -e for error exit
+- [ ] **Status Output**: Reports deployment status
 
 ## Technical Requirements
 
-### Code Quality
-- [ ] **No Compilation Errors**: All code compiles without errors
-- [ ] **No Clippy Warnings**: Passes `cargo clippy -- -D warnings`
-- [ ] **Formatted Code**: Passes `cargo fmt -- --check`
-- [ ] **No Test Failures**: All existing tests continue to pass
+### Docker Image Quality
+- [ ] **Build Success**: Image builds without errors
+- [ ] **Size Optimization**: Final image under 200MB
+- [ ] **No Build Artifacts**: Build stage artifacts not in final image
+- [ ] **Security Updates**: Base image packages updated
+- [ ] **Non-Root User**: (Recommended) Runs as non-root
 
-### Performance
-- [ ] **Test Speed**: Unit tests complete in < 30 seconds
-- [ ] **CI Pipeline**: Full CI run completes in < 5 minutes
-- [ ] **Database Setup**: Test database ready in < 10 seconds
-- [ ] **Coverage Generation**: Reports generated in < 1 minute
+### Container Functionality
+- [ ] **Container Starts**: Runs without crashes
+- [ ] **Port Accessible**: Responds on port 3000
+- [ ] **Database Connection**: Connects to PostgreSQL
+- [ ] **Environment Config**: Reads environment variables
+- [ ] **Graceful Shutdown**: Handles SIGTERM properly
 
-### Documentation
-- [ ] **Script Comments**: Shell scripts include usage comments
-- [ ] **Test Documentation**: Test utilities have doc comments
-- [ ] **CI Documentation**: Workflow file includes descriptive job names
-- [ ] **README Updates**: Testing instructions added if README exists
+### Kubernetes Compatibility
+- [ ] **Valid YAML**: All manifests parse correctly
+- [ ] **Resource Validation**: kubectl dry-run passes
+- [ ] **Label Consistency**: Labels match across resources
+- [ ] **Probe Endpoints**: Health endpoints exist
+- [ ] **Secret References**: Database secret referenced correctly
 
 ## Test Scenarios
 
-### Scenario 1: Fresh Environment Setup
-**Given**: Clean development environment
-**When**: Running `./scripts/setup_test_db.sh`
-**Then**: 
-- PostgreSQL container starts successfully
-- Test database is created
-- Script completes without errors
-
-### Scenario 2: Test Execution
-**Given**: Test database is set up
-**When**: Running `cargo test`
+### Scenario 1: Docker Image Build
+**Given**: Dockerfile in project root
+**When**: Running `docker build -t test-image .`
 **Then**:
-- All unit tests pass
-- All integration tests pass
-- Test utilities are available
-- No test pollution between runs
+- Build completes successfully
+- Image is created
+- Image size is reasonable
+- No build warnings
 
-### Scenario 3: Coverage Generation
-**Given**: Tests are passing
-**When**: Running `./scripts/run_tests.sh`
+### Scenario 2: Docker Compose Environment
+**Given**: docker-compose.yml configured
+**When**: Running `docker-compose up -d`
 **Then**:
-- Coverage report generated
-- HTML file created in ./coverage/
-- Coverage percentage displayed
-- No errors during generation
+- All services start
+- PostgreSQL is accessible
+- API responds to requests
+- Logs show successful startup
 
-### Scenario 4: CI Pipeline Trigger
-**Given**: Code pushed to repository
-**When**: GitHub Actions workflow triggers
+### Scenario 3: Container Health Check
+**Given**: Container is running
+**When**: Executing `curl http://localhost:3000/health`
 **Then**:
-- Workflow starts automatically
-- All jobs complete successfully
-- Tests pass in CI environment
-- Build artifacts available
+- Returns HTTP 200
+- Response indicates healthy status
+- Database connection verified
+- No errors in logs
 
-### Scenario 5: Test Utility Usage
-**Given**: Test utilities module exists
-**When**: Writing new tests
+### Scenario 4: Kubernetes Deployment
+**Given**: Kubernetes cluster available
+**When**: Running `kubectl apply -f k8s/`
 **Then**:
-- Can import test_utils module
-- Factory functions work correctly
-- Generated test data is valid
-- Utilities only available in test mode
+- Deployment created
+- 3 pods running
+- Service created
+- No error events
+
+### Scenario 5: Pod Scaling
+**Given**: Deployment is running
+**When**: Executing `kubectl scale deployment/rust-basic-api --replicas=5`
+**Then**:
+- Scales to 5 pods
+- All pods become ready
+- Service distributes traffic
+- No resource issues
+
+### Scenario 6: Build Script Execution
+**Given**: Build script exists
+**When**: Running `./scripts/build_image.sh`
+**Then**:
+- Script executes without errors
+- Image tagged with git SHA
+- Latest tag updated
+- Success message displayed
 
 ## Edge Cases
 
-### Database Container Issues
-- [ ] **Container Already Exists**: Script handles existing containers
-- [ ] **Port Conflicts**: Clear error message for port 5432 conflicts
-- [ ] **Docker Not Running**: Informative error about Docker requirement
-- [ ] **Connection Timeout**: Appropriate retry logic implemented
+### Container Issues
+- [ ] **Missing Dependencies**: Clear error for missing packages
+- [ ] **Port Conflicts**: Handles port already in use
+- [ ] **Database Unavailable**: Retries connection appropriately
+- [ ] **Memory Limits**: Respects resource constraints
 
-### Test Failures
-- [ ] **Compilation Errors**: CI fails fast with clear error messages
-- [ ] **Migration Failures**: Database state errors handled gracefully
-- [ ] **Timeout Handling**: Long-running tests timeout appropriately
-- [ ] **Cleanup on Failure**: Resources cleaned up even on test failure
+### Kubernetes Issues
+- [ ] **Image Pull Errors**: Clear error messages
+- [ ] **Pod Crashes**: Proper restart behavior
+- [ ] **Probe Failures**: Pods marked not ready
+- [ ] **Resource Exhaustion**: Pods evicted gracefully
+
+### Build Issues
+- [ ] **Compilation Failures**: Build fails fast with clear errors
+- [ ] **Network Issues**: Handles package download failures
+- [ ] **Cache Corruption**: Can rebuild from clean state
+- [ ] **Git Not Available**: Handles missing git gracefully
 
 ## Validation Checklist
 
 ### Manual Testing
-1. [ ] Run `./scripts/setup_test_db.sh` - completes successfully
-2. [ ] Run `cargo test` - all tests pass
-3. [ ] Run `./scripts/run_tests.sh` - coverage report generated
-4. [ ] Check `./coverage/tarpaulin-report.html` - report is readable
-5. [ ] Push to test branch - CI workflow triggers and passes
+1. [ ] Build Docker image - completes successfully
+2. [ ] Run container standalone - starts and responds
+3. [ ] Run docker-compose up - all services work
+4. [ ] Test API endpoints - return expected responses
+5. [ ] Apply k8s manifests - deployment successful
+6. [ ] Check pod logs - no errors present
+7. [ ] Test scaling - pods scale up/down correctly
+8. [ ] Run build script - image created and tagged
+9. [ ] Run deploy script - manifests applied
 
 ### Automated Validation
-1. [ ] CI workflow runs on push to main branch
-2. [ ] All GitHub Actions jobs show green checkmarks
-3. [ ] Coverage percentage is displayed in CI logs
-4. [ ] No security warnings from GitHub
+1. [ ] Docker build in CI pipeline
+2. [ ] Container security scanning
+3. [ ] Kubernetes manifest validation
+4. [ ] Deployment smoke tests
+5. [ ] Health probe verification
 
-## Success Metrics
-- **Test Coverage**: Minimum 70% code coverage achieved
-- **CI Reliability**: 95% success rate for CI runs
-- **Test Speed**: Average test run time under 1 minute
-- **Setup Time**: New developer setup under 5 minutes
+## Performance Metrics
+- **Build Time**: Under 5 minutes for full build
+- **Image Size**: Under 200MB for final image
+- **Startup Time**: Container ready in < 30 seconds
+- **Memory Usage**: Under 256MB per pod
+- **CPU Usage**: Under 200m per pod idle
+
+## Security Checklist
+- [ ] No secrets in Dockerfile
+- [ ] No hardcoded passwords
+- [ ] Base image from trusted source
+- [ ] Minimal attack surface
+- [ ] No unnecessary packages
+- [ ] Security scanning passed
+
+## Documentation Requirements
+- [ ] Dockerfile comments explain stages
+- [ ] docker-compose.yml documented
+- [ ] Kubernetes manifests have descriptions
+- [ ] Scripts include usage instructions
+- [ ] README updated with deployment steps
 
 ## Definition of Done
 - [ ] All functional requirements met
@@ -161,12 +211,15 @@ This document defines the acceptance criteria for the comprehensive testing setu
 - [ ] All test scenarios pass
 - [ ] Edge cases handled appropriately
 - [ ] Manual testing completed
-- [ ] CI pipeline running successfully
-- [ ] Documentation updated
-- [ ] Code review completed (if applicable)
+- [ ] Performance metrics achieved
+- [ ] Security checklist passed
+- [ ] Documentation complete
+- [ ] Scripts are executable
+- [ ] Images build and run successfully
 
 ## Notes
-- Coverage thresholds can be adjusted based on project requirements
-- Additional test utilities should be added as needed
-- Consider adding integration with coverage services (Codecov, Coveralls)
-- Performance benchmarks may be added in future iterations
+- Consider adding Helm charts for production deployments
+- Implement image scanning in CI/CD pipeline
+- Plan for secret rotation strategy
+- Consider using distroless images for smaller size
+- Add monitoring and logging sidecars in future iterations
