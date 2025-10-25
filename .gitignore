@@ -39,6 +39,7 @@ hooks/
 
 # Environment files with secrets
 .env
+.env.test
 
 # Code coverage reports
 lcov.info
