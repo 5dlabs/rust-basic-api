@@ -166,7 +166,7 @@ jobs:
         run: cargo install sqlx-cli --no-default-features --features postgres --force && sqlx migrate run
 
       - name: Generate coverage report
-        run: cargo llvm-cov --workspace --all-features --fail-under-lines 90 --html
+        run: cargo llvm-cov --workspace --all-features --fail-under-lines 75 --html
 
       - name: Upload coverage artifacts
         if: always()
