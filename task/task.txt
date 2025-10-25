@@ -1,256 +1,161 @@
-# Task ID: 4
-# Title: User Repository Implementation
+# Task ID: 6
+# Title: Comprehensive Testing Setup
 # Status: pending
-# Dependencies: 2, 3
-# Priority: high
-# Description: Implement the UserRepository trait and SQLx-based implementation for database operations
+# Dependencies: 5
+# Priority: medium
+# Description: Set up a comprehensive testing framework including unit tests, integration tests, and test utilities
 # Details:
-1. Create the repository trait in src/repository/user_repository.rs:
+1. Create a test utilities module in src/test_utils.rs:
 ```rust
-use async_trait::async_trait;
-use crate::models::{User, CreateUserRequest, UpdateUserRequest};
-use crate::error::{ApiError, Result};
-
-#[async_trait]
-pub trait UserRepository {
-    async fn create_user(&self, req: CreateUserRequest) -> Result<User>;
-    async fn get_user(&self, id: i32) -> Result<Option<User>>;
-    async fn get_users(&self) -> Result<Vec<User>>;
-    async fn update_user(&self, id: i32, req: UpdateUserRequest) -> Result<Option<User>>;
-    async fn delete_user(&self, id: i32) -> Result<bool>;
-}
-```
-
-2. Implement the SQLx-based repository:
-```rust
-use sqlx::PgPool;
-
-pub struct SqlxUserRepository {
-    pool: PgPool,
-}
-
-impl SqlxUserRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
-
-#[async_trait]
-impl UserRepository for SqlxUserRepository {
-    async fn create_user(&self, req: CreateUserRequest) -> Result<User> {
-        let user = sqlx::query_as!(User,
-            r#"INSERT INTO users (name, email) VALUES ($1, $2) 
-               RETURNING id, name, email, created_at, updated_at"#,
-            req.name, req.email
-        )
-        .fetch_one(&self.pool)
-        .await
-        .map_err(ApiError::Database)?;
-        
-        Ok(user)
-    }
+#[cfg(test)]
+pub mod test_utils {
+    use crate::models::User;
+    use chrono::Utc;
     
-    async fn get_user(&self, id: i32) -> Result<Option<User>> {
-        let user = sqlx::query_as!(User,
-            r#"SELECT id, name, email, created_at, updated_at FROM users WHERE id = $1"#,
-            id
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(ApiError::Database)?;
-        
-        Ok(user)
-    }
-    
-    async fn get_users(&self) -> Result<Vec<User>> {
-        let users = sqlx::query_as!(User,
-            r#"SELECT id, name, email, created_at, updated_at FROM users ORDER BY id"#
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(ApiError::Database)?;
-        
-        Ok(users)
-    }
-    
-    async fn update_user(&self, id: i32, req: UpdateUserRequest) -> Result<Option<User>> {
-        // First check if user exists
-        let existing = self.get_user(id).await?;
-        if existing.is_none() {
-            return Ok(None);
+    pub fn create_test_user(id: i32) -> User {
+        User {
+            id,
+            name: format!("Test User {}", id),
+            email: format!("test{}@example.com", id),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
         }
-        
-        // Build dynamic update query
-        let mut query = String::from("UPDATE users SET updated_at = NOW()");
-        let mut params = vec![];
-        
-        if let Some(name) = &req.name {
-            params.push(name.clone());
-            query.push_str(&format!(", name = ${}", params.len()));
-        }
-        
-        if let Some(email) = &req.email {
-            params.push(email.clone());
-            query.push_str(&format!(", email = ${}", params.len()));
-        }
-        
-        params.push(id.to_string());
-        query.push_str(&format!(
-            " WHERE id = ${} RETURNING id, name, email, created_at, updated_at",
-            params.len()
-        ));
-        
-        let user = sqlx::query_as::<_, User>(&query)
-            .bind_all(params)
-            .fetch_one(&self.pool)
-            .await
-            .map_err(ApiError::Database)?;
-            
-        Ok(Some(user))
-    }
-    
-    async fn delete_user(&self, id: i32) -> Result<bool> {
-        let result = sqlx::query!("DELETE FROM users WHERE id = $1", id)
-            .execute(&self.pool)
-            .await
-            .map_err(ApiError::Database)?;
-            
-        Ok(result.rows_affected() > 0)
     }
 }
 ```
 
-3. Update src/repository/mod.rs to export the repository:
-```rust
-mod user_repository;
-
-pub use user_repository::{UserRepository, SqlxUserRepository};
-
-// Keep the existing create_pool function
+2. Set up a test database configuration in .env.test:
+```
+DATABASE_URL=postgresql://postgres:password@localhost:5432/rust_api_test
+RUST_LOG=debug
 ```
 
-4. Add async-trait to Cargo.toml:
+3. Create a script to set up the test database in scripts/setup_test_db.sh:
+```bash
+#!/bin/bash
+set -e
+
+PG_CONTAINER="postgres_test"
+PG_USER="postgres"
+PG_PASSWORD="password"
+PG_DB="rust_api_test"
+
+# Start PostgreSQL container for testing if not running
+if [ ! "$(docker ps -q -f name=$PG_CONTAINER)" ]; then
+    if [ "$(docker ps -aq -f name=$PG_CONTAINER)" ]; then
+        # Cleanup if container exists but is not running
+        docker rm $PG_CONTAINER
+    fi
+    
+    echo "Starting PostgreSQL container for testing..."
+    docker run --name $PG_CONTAINER -e POSTGRES_PASSWORD=$PG_PASSWORD \
+        -e POSTGRES_DB=$PG_DB -p 5432:5432 -d postgres:15
+    
+    # Wait for PostgreSQL to start
+    echo "Waiting for PostgreSQL to start..."
+    sleep 5
+fi
+
+# Create test database if it doesn't exist
+docker exec -it $PG_CONTAINER psql -U $PG_USER -c "SELECT 1 FROM pg_database WHERE datname = '$PG_DB'" | grep -q 1 || \
+    docker exec -it $PG_CONTAINER psql -U $PG_USER -c "CREATE DATABASE $PG_DB"
+
+echo "Test database setup complete"
+```
+
+4. Add a test coverage tool to Cargo.toml:
 ```toml
-async-trait = "0.1"
+[dev-dependencies]
+tarpaulin = "0.25"
+```
+
+5. Create a script to run tests with coverage in scripts/run_tests.sh:
+```bash
+#!/bin/bash
+set -e
+
+# Setup test database
+./scripts/setup_test_db.sh
+
+# Run tests with coverage
+cargo tarpaulin --out Html --output-dir ./coverage
+
+echo "Tests completed. Coverage report available in ./coverage/tarpaulin-report.html"
+```
+
+6. Add a GitHub Actions workflow for CI in .github/workflows/ci.yml:
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: rust_api_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+        components: rustfmt, clippy
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    
+    - name: Install SQLx CLI
+      run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
+    
+    - name: Run migrations
+      run: sqlx migrate run
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/rust_api_test
+    
+    - name: Check formatting
+      run: cargo fmt -- --check
+    
+    - name: Clippy
+      run: cargo clippy -- -D warnings
+    
+    - name: Run tests
+      run: cargo test
+      env:
+        DATABASE_URL: postgresql://postgres:password@localhost:5432/rust_api_test
+        RUST_LOG: debug
 ```
 
 # Test Strategy:
-1. Create integration tests for the repository in src/repository/user_repository_test.rs:
-```rust
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::repository::test_utils::setup_test_database;
-    
-    #[sqlx::test]
-    async fn test_create_user() {
-        let pool = setup_test_database().await;
-        let repo = SqlxUserRepository::new(pool);
-        
-        let req = CreateUserRequest {
-            name: "Test User".to_string(),
-            email: "test@example.com".to_string(),
-        };
-        
-        let user = repo.create_user(req).await.unwrap();
-        assert_eq!(user.name, "Test User");
-        assert_eq!(user.email, "test@example.com");
-        assert!(user.id > 0);
-    }
-    
-    #[sqlx::test]
-    async fn test_get_user() {
-        let pool = setup_test_database().await;
-        let repo = SqlxUserRepository::new(pool);
-        
-        // Create a user first
-        let req = CreateUserRequest {
-            name: "Get Test".to_string(),
-            email: "get@example.com".to_string(),
-        };
-        
-        let created = repo.create_user(req).await.unwrap();
-        
-        // Now retrieve it
-        let user = repo.get_user(created.id).await.unwrap().unwrap();
-        assert_eq!(user.id, created.id);
-        assert_eq!(user.name, "Get Test");
-    }
-    
-    #[sqlx::test]
-    async fn test_update_user() {
-        let pool = setup_test_database().await;
-        let repo = SqlxUserRepository::new(pool);
-        
-        // Create a user first
-        let req = CreateUserRequest {
-            name: "Update Test".to_string(),
-            email: "update@example.com".to_string(),
-        };
-        
-        let created = repo.create_user(req).await.unwrap();
-        
-        // Update the user
-        let update_req = UpdateUserRequest {
-            name: Some("Updated Name".to_string()),
-            email: None,
-        };
-        
-        let updated = repo.update_user(created.id, update_req).await.unwrap().unwrap();
-        assert_eq!(updated.id, created.id);
-        assert_eq!(updated.name, "Updated Name");
-        assert_eq!(updated.email, "update@example.com"); // Email unchanged
-    }
-    
-    #[sqlx::test]
-    async fn test_delete_user() {
-        let pool = setup_test_database().await;
-        let repo = SqlxUserRepository::new(pool);
-        
-        // Create a user first
-        let req = CreateUserRequest {
-            name: "Delete Test".to_string(),
-            email: "delete@example.com".to_string(),
-        };
-        
-        let created = repo.create_user(req).await.unwrap();
-        
-        // Delete the user
-        let deleted = repo.delete_user(created.id).await.unwrap();
-        assert!(deleted);
-        
-        // Verify it's gone
-        let user = repo.get_user(created.id).await.unwrap();
-        assert!(user.is_none());
-    }
-}
-```
-
-2. Test with transactions to ensure database isolation:
-```rust
-#[sqlx::test]
-async fn test_with_transaction() {
-    let pool = setup_test_database().await;
-    let mut tx = pool.begin().await.unwrap();
-    
-    // Create a user in the transaction
-    let user = sqlx::query_as!(User,
-        r#"INSERT INTO users (name, email) VALUES ($1, $2) 
-           RETURNING id, name, email, created_at, updated_at"#,
-        "Transaction Test", "tx@example.com"
-    )
-    .fetch_one(&mut tx)
-    .await
-    .unwrap();
-    
-    assert_eq!(user.name, "Transaction Test");
-    
-    // Rollback the transaction
-    tx.rollback().await.unwrap();
-    
-    // Verify the user doesn't exist in the database
-    let repo = SqlxUserRepository::new(pool);
-    let result = repo.get_user(user.id).await.unwrap();
-    assert!(result.is_none());
-}
-```
+1. Run unit tests with `cargo test --lib`
+2. Run integration tests with `cargo test --test '*'`
+3. Verify test coverage with `cargo tarpaulin`
+4. Test the GitHub Actions workflow by pushing to a test branch
+5. Verify that all tests pass in the CI environment
+6. Check that the test database setup script works correctly
+7. Verify that the test utilities are working as expected

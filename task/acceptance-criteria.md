@@ -1,234 +1,172 @@
-# Task 4: User Repository Implementation - Acceptance Criteria
+# Task 6: Comprehensive Testing Setup - Acceptance Criteria
 
-## Definition of Done
-This task is considered complete when all the following criteria are met:
+## Overview
+This document defines the acceptance criteria for the comprehensive testing setup implementation. All criteria must be met for the task to be considered complete.
 
-## Core Requirements
+## Functional Requirements
 
-### 1. Repository Trait Definition
-- [ ] `src/repository/user_repository.rs` file exists and compiles
-- [ ] UserRepository trait defined with async_trait macro
-- [ ] All five CRUD methods declared in trait
-- [ ] Methods use appropriate return types (Result, Option)
-- [ ] Trait is public and properly exported
+### 1. Test Utilities Module
+- [ ] **File Created**: `src/test_utils.rs` exists and is properly structured
+- [ ] **Factory Functions**: Test user creation function implemented
+- [ ] **Conditional Compilation**: Module uses `#[cfg(test)]` attribute
+- [ ] **Module Registration**: Added to lib.rs or main.rs with proper imports
+- [ ] **Extensibility**: Structure allows easy addition of new test utilities
 
-### 2. SQLx Implementation
-- [ ] SqlxUserRepository struct defined with PgPool field
-- [ ] Constructor method `new(pool: PgPool)` implemented
-- [ ] All trait methods implemented for SqlxUserRepository
-- [ ] Uses SQLx query macros for type safety
-- [ ] Proper error conversion to ApiError
+### 2. Test Database Configuration
+- [ ] **Environment File**: `.env.test` file created with test database URL
+- [ ] **Database Isolation**: Test database separate from development
+- [ ] **Connection String**: Valid PostgreSQL connection string
+- [ ] **Logging Configuration**: Debug logging enabled for tests
+- [ ] **No Production Data**: Test database never connects to production
 
-### 3. CRUD Operations
-- [ ] `create_user` inserts and returns created user with ID
-- [ ] `get_user` returns Option<User> for given ID
-- [ ] `get_users` returns Vec<User> ordered by ID
-- [ ] `update_user` performs partial updates correctly
-- [ ] `delete_user` removes user and returns success status
+### 3. Database Setup Script
+- [ ] **Script Creation**: `scripts/setup_test_db.sh` file exists
+- [ ] **Executable Permission**: Script has execute permissions
+- [ ] **Docker Management**: Handles PostgreSQL container lifecycle
+- [ ] **Database Creation**: Creates test database if not exists
+- [ ] **Health Checks**: Waits for database to be ready
+- [ ] **Idempotency**: Script can be run multiple times safely
+- [ ] **Error Handling**: Graceful failure with clear messages
 
-### 4. Dynamic Update Implementation
-- [ ] Checks if user exists before attempting update
-- [ ] Builds SQL query dynamically based on provided fields
-- [ ] Only updates fields that are Some(value)
-- [ ] Always updates the `updated_at` timestamp
-- [ ] Returns None if user doesn't exist
+### 4. Coverage Tooling
+- [ ] **Dependency Added**: Tarpaulin in Cargo.toml dev-dependencies
+- [ ] **Version Specified**: Tarpaulin version 0.25 or compatible
+- [ ] **Installation Success**: `cargo install cargo-tarpaulin` works
+- [ ] **Coverage Generation**: HTML reports generated successfully
+- [ ] **Output Directory**: Coverage reports saved to `./coverage/`
 
-### 5. Module Organization
-- [ ] `src/repository/mod.rs` updated with exports
-- [ ] UserRepository trait is publicly exported
-- [ ] SqlxUserRepository is publicly exported
-- [ ] Existing pool creation function preserved
+### 5. Test Execution Script
+- [ ] **Script Creation**: `scripts/run_tests.sh` file exists
+- [ ] **Executable Permission**: Script has execute permissions
+- [ ] **Database Setup Integration**: Calls setup_test_db.sh
+- [ ] **Coverage Execution**: Runs Tarpaulin with correct options
+- [ ] **Report Generation**: Creates HTML coverage report
+- [ ] **Clear Output**: Provides informative console output
+- [ ] **Exit Codes**: Returns appropriate exit codes
 
-### 6. Dependencies
-- [ ] Cargo.toml includes `async-trait = "0.1"`
-- [ ] Project compiles with new dependency
+### 6. CI/CD Workflow
+- [ ] **Workflow File**: `.github/workflows/ci.yml` created
+- [ ] **Trigger Configuration**: Runs on push to main and PRs
+- [ ] **PostgreSQL Service**: Database service container configured
+- [ ] **Rust Setup**: Toolchain installation configured
+- [ ] **Dependency Caching**: Cache configuration for faster builds
+- [ ] **Migration Execution**: SQLx migrations run in CI
+- [ ] **Code Quality Checks**: Formatting and Clippy checks
+- [ ] **Test Execution**: All tests run successfully
 
-## Functional Test Cases
-
-### Test Case 1: Create User
-```rust
-// Given
-let repo = SqlxUserRepository::new(pool);
-let req = CreateUserRequest {
-    name: "John Doe".to_string(),
-    email: "john@example.com".to_string(),
-};
-
-// When
-let user = repo.create_user(req).await?;
-
-// Then
-assert!(user.id > 0);
-assert_eq!(user.name, "John Doe");
-assert_eq!(user.email, "john@example.com");
-assert!(user.created_at <= user.updated_at);
-```
-
-### Test Case 2: Get Existing User
-```rust
-// Given
-let created = repo.create_user(req).await?;
-
-// When
-let user = repo.get_user(created.id).await?;
-
-// Then
-assert!(user.is_some());
-assert_eq!(user.unwrap().id, created.id);
-```
-
-### Test Case 3: Get Non-Existent User
-```rust
-// When
-let user = repo.get_user(99999).await?;
-
-// Then
-assert!(user.is_none());
-```
-
-### Test Case 4: Partial Update
-```rust
-// Given
-let created = repo.create_user(initial_req).await?;
-let update_req = UpdateUserRequest {
-    name: Some("New Name".to_string()),
-    email: None,
-};
-
-// When
-let updated = repo.update_user(created.id, update_req).await?;
-
-// Then
-assert!(updated.is_some());
-let user = updated.unwrap();
-assert_eq!(user.name, "New Name");
-assert_eq!(user.email, created.email); // Unchanged
-assert!(user.updated_at > created.updated_at);
-```
-
-### Test Case 5: Delete User
-```rust
-// Given
-let created = repo.create_user(req).await?;
-
-// When
-let deleted = repo.delete_user(created.id).await?;
-
-// Then
-assert!(deleted);
-let user = repo.get_user(created.id).await?;
-assert!(user.is_none());
-```
-
-### Test Case 6: List All Users
-```rust
-// Given
-repo.create_user(req1).await?;
-repo.create_user(req2).await?;
-
-// When
-let users = repo.get_users().await?;
-
-// Then
-assert!(users.len() >= 2);
-assert!(users.windows(2).all(|w| w[0].id < w[1].id)); // Ordered by ID
-```
-
-## Non-Functional Requirements
-
-### Performance
-- [ ] Connection pool used efficiently (no connection leaks)
-- [ ] Queries execute in reasonable time (<100ms for single operations)
-- [ ] No N+1 query problems
-- [ ] Batch operations use single queries where possible
-
-### Security
-- [ ] All queries use parameterized statements
-- [ ] No SQL injection vulnerabilities
-- [ ] Database errors don't expose connection details
-- [ ] User input properly sanitized
+## Technical Requirements
 
 ### Code Quality
-- [ ] No compiler warnings
-- [ ] No use of unwrap() or expect()
-- [ ] Consistent error handling throughout
-- [ ] Clear separation between trait and implementation
-- [ ] Follows Rust naming conventions
+- [ ] **No Compilation Errors**: All code compiles without errors
+- [ ] **No Clippy Warnings**: Passes `cargo clippy -- -D warnings`
+- [ ] **Formatted Code**: Passes `cargo fmt -- --check`
+- [ ] **No Test Failures**: All existing tests continue to pass
 
-### Error Handling
-- [ ] Database errors properly mapped to ApiError
-- [ ] Connection failures handled gracefully
-- [ ] Constraint violations (e.g., duplicate email) handled
-- [ ] Transaction rollbacks work correctly
+### Performance
+- [ ] **Test Speed**: Unit tests complete in < 30 seconds
+- [ ] **CI Pipeline**: Full CI run completes in < 5 minutes
+- [ ] **Database Setup**: Test database ready in < 10 seconds
+- [ ] **Coverage Generation**: Reports generated in < 1 minute
 
-## SQL Query Verification
+### Documentation
+- [ ] **Script Comments**: Shell scripts include usage comments
+- [ ] **Test Documentation**: Test utilities have doc comments
+- [ ] **CI Documentation**: Workflow file includes descriptive job names
+- [ ] **README Updates**: Testing instructions added if README exists
 
-### Create Query
-- [ ] Uses RETURNING clause for efficiency
-- [ ] Returns all user fields including timestamps
-- [ ] Handles auto-generated ID correctly
+## Test Scenarios
 
-### Update Query
-- [ ] Only includes fields that need updating
-- [ ] Always updates `updated_at` timestamp
-- [ ] Uses RETURNING clause to get updated data
-- [ ] Handles empty update requests appropriately
+### Scenario 1: Fresh Environment Setup
+**Given**: Clean development environment
+**When**: Running `./scripts/setup_test_db.sh`
+**Then**: 
+- PostgreSQL container starts successfully
+- Test database is created
+- Script completes without errors
 
-### Delete Query
-- [ ] Returns rows_affected for success detection
-- [ ] Handles cascade deletes if configured
-- [ ] Doesn't error on non-existent ID
+### Scenario 2: Test Execution
+**Given**: Test database is set up
+**When**: Running `cargo test`
+**Then**:
+- All unit tests pass
+- All integration tests pass
+- Test utilities are available
+- No test pollution between runs
 
-## Integration Requirements
-- [ ] Works with existing User model from Task 3
-- [ ] Uses ApiError from Task 3
-- [ ] Compatible with database schema from Task 2
-- [ ] Can be injected into handlers (Task 5)
+### Scenario 3: Coverage Generation
+**Given**: Tests are passing
+**When**: Running `./scripts/run_tests.sh`
+**Then**:
+- Coverage report generated
+- HTML file created in ./coverage/
+- Coverage percentage displayed
+- No errors during generation
 
-## Database Constraints
-- [ ] Respects unique constraint on email
-- [ ] Handles foreign key constraints properly
-- [ ] Manages NOT NULL constraints correctly
-- [ ] Timestamp fields auto-populate correctly
+### Scenario 4: CI Pipeline Trigger
+**Given**: Code pushed to repository
+**When**: GitHub Actions workflow triggers
+**Then**:
+- Workflow starts automatically
+- All jobs complete successfully
+- Tests pass in CI environment
+- Build artifacts available
 
-## Testing Requirements
-- [ ] Integration tests can run against test database
-- [ ] Tests use transactions for isolation
-- [ ] Test data cleanup happens automatically
-- [ ] All CRUD operations have test coverage
+### Scenario 5: Test Utility Usage
+**Given**: Test utilities module exists
+**When**: Writing new tests
+**Then**:
+- Can import test_utils module
+- Factory functions work correctly
+- Generated test data is valid
+- Utilities only available in test mode
 
-## Documentation
-- [ ] Public methods have doc comments
-- [ ] Complex logic includes inline comments
-- [ ] SQL queries documented for clarity
-- [ ] Module-level documentation explains pattern
+## Edge Cases
 
-## Verification Steps
-1. Run `cargo build` - compiles without errors
-2. Run `cargo check` - no warnings
-3. Run `cargo test` - repository tests pass
-4. Verify database operations with test data
-5. Check for SQL injection vulnerabilities
-6. Verify connection pool behavior
+### Database Container Issues
+- [ ] **Container Already Exists**: Script handles existing containers
+- [ ] **Port Conflicts**: Clear error message for port 5432 conflicts
+- [ ] **Docker Not Running**: Informative error about Docker requirement
+- [ ] **Connection Timeout**: Appropriate retry logic implemented
 
-## Performance Benchmarks
-- [ ] Single user fetch: <10ms
-- [ ] Create user: <20ms
-- [ ] Update user: <15ms
-- [ ] Delete user: <10ms
-- [ ] List 100 users: <50ms
+### Test Failures
+- [ ] **Compilation Errors**: CI fails fast with clear error messages
+- [ ] **Migration Failures**: Database state errors handled gracefully
+- [ ] **Timeout Handling**: Long-running tests timeout appropriately
+- [ ] **Cleanup on Failure**: Resources cleaned up even on test failure
 
-## Rollback Plan
-If issues are found:
-1. Identify specific failing operations
-2. Check database logs for errors
-3. Verify connection pool configuration
-4. Review SQL query syntax
-5. Rollback to previous working version if critical
+## Validation Checklist
 
-## Sign-off Checklist
-- [ ] Developer: Implementation complete and tested
-- [ ] Database: Queries optimized and indexed
-- [ ] Security: No SQL injection risks
-- [ ] Performance: Meets benchmark requirements
-- [ ] Integration: Works with existing code
+### Manual Testing
+1. [ ] Run `./scripts/setup_test_db.sh` - completes successfully
+2. [ ] Run `cargo test` - all tests pass
+3. [ ] Run `./scripts/run_tests.sh` - coverage report generated
+4. [ ] Check `./coverage/tarpaulin-report.html` - report is readable
+5. [ ] Push to test branch - CI workflow triggers and passes
+
+### Automated Validation
+1. [ ] CI workflow runs on push to main branch
+2. [ ] All GitHub Actions jobs show green checkmarks
+3. [ ] Coverage percentage is displayed in CI logs
+4. [ ] No security warnings from GitHub
+
+## Success Metrics
+- **Test Coverage**: Minimum 70% code coverage achieved
+- **CI Reliability**: 95% success rate for CI runs
+- **Test Speed**: Average test run time under 1 minute
+- **Setup Time**: New developer setup under 5 minutes
+
+## Definition of Done
+- [ ] All functional requirements met
+- [ ] All technical requirements satisfied
+- [ ] All test scenarios pass
+- [ ] Edge cases handled appropriately
+- [ ] Manual testing completed
+- [ ] CI pipeline running successfully
+- [ ] Documentation updated
+- [ ] Code review completed (if applicable)
+
+## Notes
+- Coverage thresholds can be adjusted based on project requirements
+- Additional test utilities should be added as needed
+- Consider adding integration with coverage services (Codecov, Coveralls)
+- Performance benchmarks may be added in future iterations

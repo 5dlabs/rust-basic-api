@@ -1,124 +1,148 @@
-# Task 4: User Repository Implementation - Autonomous Agent Prompt
+# Task 6: Comprehensive Testing Setup - Autonomous Implementation Prompt
 
-You are a senior Rust developer specializing in database integration and repository patterns. Your task is to implement a clean, type-safe data access layer using SQLx and the repository pattern.
+You are a senior Rust developer tasked with implementing a comprehensive testing framework for a Rust API project. Your goal is to set up unit tests, integration tests, test utilities, and continuous integration.
 
 ## Your Mission
-Implement the UserRepository trait and its SQLx-based implementation to provide database operations for the User model in a Rust REST API.
+Implement a complete testing infrastructure that ensures code quality, reliability, and maintainability through automated testing. This includes creating test utilities, configuring test databases, setting up coverage reporting, and implementing CI/CD workflows.
 
 ## Context
-- Tasks 2 and 3 have been completed (database setup and data models)
-- You have access to a PostgreSQL database with a users table
-- The User model and error handling are already implemented
-- Focus on creating a clean abstraction for data access
+- Project: Rust-based REST API with PostgreSQL database
+- Current State: Core API functionality implemented (Tasks 1-5 completed)
+- Dependencies: Actix-web, SQLx, PostgreSQL
+- Goal: Establish robust testing practices
 
-## Required Implementations
+## Implementation Requirements
 
-### 1. Repository Trait (`src/repository/user_repository.rs`)
-Define an async trait with these methods:
-- `create_user`: Insert new user and return created entity
-- `get_user`: Retrieve user by ID (returns Option)
-- `get_users`: List all users
-- `update_user`: Partial update (returns Option)
-- `delete_user`: Remove user (returns success boolean)
-
-### 2. SQLx Implementation
-Create `SqlxUserRepository` that:
-- Stores a PgPool for connection management
-- Implements all trait methods using SQLx query macros
-- Handles database errors appropriately
-- Uses type-safe SQL queries
-
-### 3. Dynamic Update Logic
-For the update method:
-- Check if user exists first
-- Build SQL dynamically based on provided fields
-- Only update fields that are Some(value)
-- Always update the `updated_at` timestamp
-
-## Technical Requirements
-- Use `async-trait` crate for async trait support
-- Use SQLx `query_as!` macro for compile-time SQL verification
-- Map all database errors to ApiError::Database
-- Return Option for queries that might not find results
-- Use parameterized queries to prevent SQL injection
-
-## SQL Query Specifications
-
-### Insert Query
-```sql
-INSERT INTO users (name, email) 
-VALUES ($1, $2) 
-RETURNING id, name, email, created_at, updated_at
+### 1. Test Utilities Module (`src/test_utils.rs`)
+Create reusable test helpers:
+```rust
+#[cfg(test)]
+pub mod test_utils {
+    use crate::models::User;
+    use chrono::Utc;
+    
+    pub fn create_test_user(id: i32) -> User {
+        User {
+            id,
+            name: format!("Test User {}", id),
+            email: format!("test{}@example.com", id),
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        }
+    }
+    
+    // Add more factory functions as needed
+}
 ```
 
-### Select Queries
-- Single: `SELECT * FROM users WHERE id = $1`
-- All: `SELECT * FROM users ORDER BY id`
-
-### Update Query (Dynamic)
-Build dynamically with:
-- Base: `UPDATE users SET updated_at = NOW()`
-- Add conditionally: `, name = $n` if name provided
-- Add conditionally: `, email = $n` if email provided
-- End with: `WHERE id = $n RETURNING *`
-
-### Delete Query
-```sql
-DELETE FROM users WHERE id = $1
+### 2. Test Environment Configuration (`.env.test`)
+```
+DATABASE_URL=postgresql://postgres:password@localhost:5432/rust_api_test
+RUST_LOG=debug
 ```
 
-## Expected Deliverables
-1. Complete implementation of UserRepository trait
-2. SqlxUserRepository struct with all methods
-3. Updated module exports in src/repository/mod.rs
-4. Cargo.toml updated with async-trait dependency
-5. All code compiles without warnings
+### 3. Test Database Setup Script (`scripts/setup_test_db.sh`)
+Create an executable script that:
+- Manages PostgreSQL Docker container
+- Creates test database
+- Handles container lifecycle
+- Provides health checks
 
-## Quality Checklist
-- [ ] All CRUD operations implemented
-- [ ] Proper error handling with ApiError mapping
-- [ ] No SQL injection vulnerabilities
-- [ ] Efficient use of connection pool
-- [ ] Dynamic update query works correctly
-- [ ] Returns appropriate Option types
-- [ ] No unwrap() or expect() calls
-- [ ] Follows Rust naming conventions
+### 4. Coverage Configuration
+Add to `Cargo.toml`:
+```toml
+[dev-dependencies]
+tarpaulin = "0.25"
+```
 
-## Implementation Steps
-1. First, add async-trait to Cargo.toml
-2. Create the trait definition with all required methods
-3. Implement SqlxUserRepository with pool storage
-4. Implement each CRUD method systematically
-5. Pay special attention to the dynamic update logic
-6. Update module exports to make types public
+### 5. Test Execution Script (`scripts/run_tests.sh`)
+Create script that:
+- Sets up test database
+- Runs tests with coverage
+- Generates HTML reports
+- Provides clear output
 
-## Error Handling Guidelines
-- All database errors should map to ApiError::Database
-- Use `?` operator for error propagation
-- Return None for get_user when not found (not an error)
-- Return empty Vec for get_users when no users exist
-- Log database errors before converting them
+### 6. GitHub Actions Workflow (`.github/workflows/ci.yml`)
+Implement CI pipeline with:
+- PostgreSQL service container
+- Rust toolchain setup
+- Dependency caching
+- Code quality checks
+- Test execution
 
-## Testing Approach
-After implementation, verify:
-- User creation returns valid ID
-- Get operations handle existing and non-existing IDs
-- Updates only modify specified fields
-- Deletes return correct success status
-- All timestamps are properly managed
+## Step-by-Step Implementation
 
-## Important Notes
-- The database schema already exists from Task 2
-- Use NOW() for timestamp updates in PostgreSQL
-- Remember that get_user returns Option (None is not an error)
-- The update method should check existence before updating
-- Keep the pool creation function in mod.rs intact
+1. **Create Test Utilities**
+   - Navigate to src directory
+   - Create test_utils.rs file
+   - Implement factory functions
+   - Add module to lib.rs
 
-## Code Quality Standards
-- Use clear, descriptive variable names
-- Add comments for complex logic
-- Keep methods focused and single-purpose
-- Follow Rust idioms and best practices
-- Ensure all public APIs are properly exported
+2. **Configure Test Environment**
+   - Create .env.test file
+   - Set DATABASE_URL for test database
+   - Configure logging levels
 
-Begin by verifying the existing repository module structure, then implement the trait and its SQLx-based implementation. Test each method to ensure it works correctly with the database.
+3. **Implement Database Setup**
+   - Create scripts directory if not exists
+   - Write setup_test_db.sh script
+   - Make script executable
+   - Test script execution
+
+4. **Add Coverage Tooling**
+   - Update Cargo.toml dev-dependencies
+   - Configure Tarpaulin settings
+   - Test coverage generation
+
+5. **Create Test Runner**
+   - Write run_tests.sh script
+   - Integrate database setup
+   - Add coverage reporting
+   - Make script executable
+
+6. **Setup CI/CD**
+   - Create .github/workflows directory
+   - Write ci.yml workflow
+   - Configure PostgreSQL service
+   - Add caching and optimization
+
+## Testing Checklist
+- [ ] Test utilities module created
+- [ ] Test database configuration set
+- [ ] Database setup script working
+- [ ] Coverage tool installed
+- [ ] Test runner script functional
+- [ ] CI workflow configured
+- [ ] All tests passing locally
+- [ ] Coverage reports generating
+- [ ] CI pipeline running successfully
+
+## Validation Steps
+1. Run `./scripts/setup_test_db.sh` to verify database setup
+2. Execute `cargo test` to run all tests
+3. Run `./scripts/run_tests.sh` for coverage
+4. Push to branch to trigger CI
+5. Verify coverage report in `./coverage/`
+
+## Expected Outcomes
+- Complete test infrastructure in place
+- Automated testing on every commit
+- Coverage reports available
+- CI/CD pipeline operational
+- Test utilities ready for use
+- Documentation for testing practices
+
+## Error Handling
+- Handle Docker container failures gracefully
+- Provide clear error messages for setup issues
+- Implement retry logic for flaky operations
+- Log detailed information for debugging
+
+## Notes
+- Ensure all scripts are executable (`chmod +x`)
+- Test database should be isolated from development
+- Coverage threshold can be configured later
+- Consider adding performance benchmarks
+- Document testing best practices for team
+
+Remember to test each component thoroughly before moving to the next. The testing infrastructure should be reliable, fast, and easy to maintain.
