@@ -5,13 +5,14 @@
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
 use validator::Validate;
 
 /// User domain model representing a user in the system
 ///
 /// This struct represents the complete user entity as stored in the database.
 /// It includes all fields including timestamps and the database-generated ID.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, FromRow)]
 pub struct User {
     /// Unique identifier for the user
     pub id: i32,

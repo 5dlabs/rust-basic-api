@@ -1,8 +1,13 @@
 // Repository module - database interaction layer
 // This module contains database queries and connection pool management
 
+pub mod user_repository;
+
 use sqlx::postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
+
+// Re-export commonly used types for convenience
+pub use user_repository::{SqlxUserRepository, UserRepository};
 
 /// Create a `PostgreSQL` connection pool with optimized settings
 ///
