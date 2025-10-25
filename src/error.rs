@@ -1,7 +1,9 @@
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
+use serde::Serialize;
 use thiserror::Error;
 
 /// Application-level errors
@@ -23,6 +25,44 @@ pub enum AppError {
     #[error("Environment variable error: {0}")]
     EnvVar(#[from] std::env::VarError),
 }
+
+/// API-level errors with structured responses
+///
+/// These errors are returned from API handlers and automatically converted
+/// to appropriate HTTP responses with structured error messages.
+#[derive(Debug, Error)]
+pub enum ApiError {
+    /// Request validation failed
+    #[error("Validation error")]
+    Validation(#[from] validator::ValidationErrors),
+
+    /// Requested resource was not found
+    #[error("Resource not found")]
+    NotFound,
+
+    /// Database operation failed
+    #[error("Database error")]
+    Database(#[from] sqlx::Error),
+
+    /// Internal server error
+    #[error("Internal server error")]
+    Internal(String),
+}
+
+/// Structured error response sent to API clients
+///
+/// This struct provides a consistent error format across all API endpoints.
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    /// Machine-readable error code
+    pub error_code: String,
+
+    /// Human-readable error message
+    pub message: String,
+}
+
+/// Type alias for Results in API handlers
+pub type ApiResult<T> = Result<T, ApiError>;
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
@@ -46,6 +86,68 @@ impl IntoResponse for AppError {
         };
 
         (status, error_message).into_response()
+    }
+}
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        let (status, error_code, message) = match self {
+            ApiError::Validation(ref errors) => {
+                // Log validation errors for debugging
+                tracing::warn!("Validation error: {:?}", errors);
+
+                // Format validation errors into a readable message
+                let error_messages: Vec<String> = errors
+                    .field_errors()
+                    .iter()
+                    .flat_map(|(field, errors)| {
+                        errors.iter().map(move |error| {
+                            format!(
+                                "{}: {}",
+                                field,
+                                error.message.as_ref().map_or("Invalid value", |m| m)
+                            )
+                        })
+                    })
+                    .collect();
+
+                (
+                    StatusCode::BAD_REQUEST,
+                    "VALIDATION_ERROR",
+                    error_messages.join(", "),
+                )
+            }
+            ApiError::NotFound => (
+                StatusCode::NOT_FOUND,
+                "NOT_FOUND",
+                "Resource not found".to_string(),
+            ),
+            ApiError::Database(ref err) => {
+                // Log database errors but don't expose details to clients
+                tracing::error!("Database error: {}", err);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "DATABASE_ERROR",
+                    "A database error occurred".to_string(),
+                )
+            }
+            ApiError::Internal(ref msg) => {
+                // Log internal errors
+                tracing::error!("Internal error: {}", msg);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "INTERNAL_ERROR",
+                    "An internal error occurred".to_string(),
+                )
+            }
+        };
+
+        let error_response = ErrorResponse {
+            error_code: error_code.to_string(),
+            message,
+        };
+
+        (status, Json(error_response)).into_response()
     }
 }
 
@@ -128,5 +230,57 @@ mod tests {
         let env_err = std::env::VarError::NotPresent;
         let app_err: AppError = env_err.into();
         assert!(matches!(app_err, AppError::EnvVar(_)));
+    }
+
+    // ApiError tests
+    #[test]
+    fn test_api_error_not_found_response() {
+        let error = ApiError::NotFound;
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn test_api_error_database_response() {
+        let error = ApiError::Database(sqlx::Error::RowNotFound);
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_api_error_internal_response() {
+        let error = ApiError::Internal("test error".to_string());
+        let response = error.into_response();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_api_error_not_found_display() {
+        let error = ApiError::NotFound;
+        assert_eq!(error.to_string(), "Resource not found");
+    }
+
+    #[test]
+    fn test_api_error_database_display() {
+        let error = ApiError::Database(sqlx::Error::RowNotFound);
+        assert_eq!(error.to_string(), "Database error");
+    }
+
+    #[test]
+    fn test_api_error_internal_display() {
+        let error = ApiError::Internal("test".to_string());
+        assert_eq!(error.to_string(), "Internal server error");
+    }
+
+    #[test]
+    fn test_error_response_serialization() {
+        let response = ErrorResponse {
+            error_code: "TEST_ERROR".to_string(),
+            message: "Test message".to_string(),
+        };
+
+        let json = serde_json::to_string(&response).expect("Failed to serialize");
+        assert!(json.contains("TEST_ERROR"));
+        assert!(json.contains("Test message"));
     }
 }
