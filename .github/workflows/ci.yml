@@ -160,7 +160,7 @@ jobs:
           shared-key: ${{ env.CACHE_KEY }}
 
       - name: Install cargo-llvm-cov
-        run: cargo install cargo-llvm-cov --locked
+        run: cargo install cargo-llvm-cov --locked --force
 
       - name: Run database migrations
         run: cargo install sqlx-cli --no-default-features --features postgres --force && sqlx migrate run
