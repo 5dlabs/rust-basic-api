@@ -315,5 +315,4 @@ mod tests {
         assert_ne!(response.status(), HttpStatus::NOT_FOUND);
         assert_ne!(response.status(), HttpStatus::METHOD_NOT_ALLOWED);
     }
-
 }
