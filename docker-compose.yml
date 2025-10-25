@@ -1,31 +1,54 @@
 version: "3.9"
 
 services:
-  app:
-    image: rust-basic-api:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      SERVER_PORT: ${SERVER_PORT:-3000}
-      RUST_LOG: ${RUST_LOG:-rust_basic_api=info,tower_http=debug}
-    ports:
-      - "${SERVER_PORT:-3000}:3000"
-    depends_on:
-      - db
-
   db:
-    image: postgres:16-alpine
+    image: postgres:15-alpine
+    container_name: rust-basic-api-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-rust_api}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rust-api-network
+
+  api:
+    image: rust-basic-api:latest
+    container_name: rust-basic-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-rust_api}
+      SERVER_PORT: 3000
+      RUST_LOG: ${RUST_LOG:-rust_basic_api=info,tower_http=debug}
+    ports:
+      - "${SERVER_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Volume mounting for hot-reload development
+      - ./src:/app/src:ro
+      - ./Cargo.toml:/app/Cargo.toml:ro
+      - ./Cargo.lock:/app/Cargo.lock:ro
+      - ./migrations:/app/migrations:ro
+    networks:
+      - rust-api-network
+    restart: unless-stopped
 
 volumes:
   postgres-data:
     driver: local
+
+networks:
+  rust-api-network:
+    driver: bridge

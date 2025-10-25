@@ -1,148 +1,172 @@
-# Task 6: Comprehensive Testing Setup - Autonomous Implementation Prompt
+# Task 7: Containerization and Deployment Setup - Autonomous Implementation Prompt
 
-You are a senior Rust developer tasked with implementing a comprehensive testing framework for a Rust API project. Your goal is to set up unit tests, integration tests, test utilities, and continuous integration.
+You are a senior DevOps engineer tasked with implementing Docker containerization and Kubernetes deployment configuration for a Rust API project. Your goal is to create a complete container-based deployment pipeline from local development to production-ready Kubernetes manifests.
 
 ## Your Mission
-Implement a complete testing infrastructure that ensures code quality, reliability, and maintainability through automated testing. This includes creating test utilities, configuring test databases, setting up coverage reporting, and implementing CI/CD workflows.
+Implement comprehensive containerization and deployment infrastructure that enables scalable, portable, and reliable deployments of the Rust API application. This includes creating efficient Docker images, development environments, and production Kubernetes configurations.
 
 ## Context
 - Project: Rust-based REST API with PostgreSQL database
-- Current State: Core API functionality implemented (Tasks 1-5 completed)
-- Dependencies: Actix-web, SQLx, PostgreSQL
-- Goal: Establish robust testing practices
+- Current State: Application development complete (Tasks 1-5)
+- Target: Container-based deployment with Kubernetes
+- Goal: Enable seamless deployment from development to production
 
 ## Implementation Requirements
 
-### 1. Test Utilities Module (`src/test_utils.rs`)
-Create reusable test helpers:
-```rust
-#[cfg(test)]
-pub mod test_utils {
-    use crate::models::User;
-    use chrono::Utc;
-    
-    pub fn create_test_user(id: i32) -> User {
-        User {
-            id,
-            name: format!("Test User {}", id),
-            email: format!("test{}@example.com", id),
-            created_at: Utc::now(),
-            updated_at: Utc::now(),
-        }
-    }
-    
-    // Add more factory functions as needed
-}
+### 1. Multi-Stage Dockerfile (Project Root)
+Create an optimized Dockerfile with build and runtime stages:
+```dockerfile
+# Build stage
+FROM rust:1.70 as builder
+WORKDIR /app
+
+# Copy manifests and build dependencies
+COPY Cargo.toml Cargo.lock ./
+
+# Create dummy main.rs for dependency caching
+RUN mkdir -p src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release
+
+# Remove dummy files
+RUN rm -rf src
+
+# Copy actual source code
+COPY . .
+
+# Build application
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bullseye-slim
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates libssl-dev && rm -rf /var/lib/apt/lists/*
+
+# Copy binary and migrations
+COPY --from=builder /app/target/release/rust-basic-api /app/rust-basic-api
+COPY --from=builder /app/migrations /app/migrations
+
+EXPOSE 3000
+CMD ["/app/rust-basic-api"]
 ```
 
-### 2. Test Environment Configuration (`.env.test`)
-```
-DATABASE_URL=postgresql://postgres:password@localhost:5432/rust_api_test
-RUST_LOG=debug
-```
+### 2. Docker Compose Configuration (`docker-compose.yml`)
+Set up local development environment with PostgreSQL and API services. Include volume mounting for hot-reload development and proper networking.
 
-### 3. Test Database Setup Script (`scripts/setup_test_db.sh`)
-Create an executable script that:
-- Manages PostgreSQL Docker container
-- Creates test database
-- Handles container lifecycle
-- Provides health checks
+### 3. Kubernetes Deployment (`k8s/deployment.yaml`)
+Create production deployment manifest with:
+- 3 replicas for high availability
+- Resource requests and limits
+- Health check probes
+- Environment configuration via secrets
+- Rolling update strategy
 
-### 4. Coverage Configuration
-Add to `Cargo.toml`:
-```toml
-[dev-dependencies]
-tarpaulin = "0.25"
-```
+### 4. Kubernetes Service (`k8s/service.yaml`)
+Define service for internal cluster routing and load balancing across pods.
 
-### 5. Test Execution Script (`scripts/run_tests.sh`)
-Create script that:
-- Sets up test database
-- Runs tests with coverage
-- Generates HTML reports
-- Provides clear output
+### 5. Build Script (`scripts/build_image.sh`)
+Automate Docker image building with git-based versioning and proper tagging.
 
-### 6. GitHub Actions Workflow (`.github/workflows/ci.yml`)
-Implement CI pipeline with:
-- PostgreSQL service container
-- Rust toolchain setup
-- Dependency caching
-- Code quality checks
-- Test execution
+### 6. Deploy Script (`scripts/deploy_k8s.sh`)
+Automate Kubernetes deployment with namespace management and verification.
 
 ## Step-by-Step Implementation
 
-1. **Create Test Utilities**
-   - Navigate to src directory
-   - Create test_utils.rs file
-   - Implement factory functions
-   - Add module to lib.rs
+1. **Create Dockerfile**
+   - Navigate to project root
+   - Create multi-stage Dockerfile
+   - Optimize for layer caching
+   - Include all necessary runtime dependencies
 
-2. **Configure Test Environment**
-   - Create .env.test file
-   - Set DATABASE_URL for test database
-   - Configure logging levels
-
-3. **Implement Database Setup**
-   - Create scripts directory if not exists
-   - Write setup_test_db.sh script
-   - Make script executable
-   - Test script execution
-
-4. **Add Coverage Tooling**
-   - Update Cargo.toml dev-dependencies
-   - Configure Tarpaulin settings
-   - Test coverage generation
-
-5. **Create Test Runner**
-   - Write run_tests.sh script
-   - Integrate database setup
-   - Add coverage reporting
-   - Make script executable
-
-6. **Setup CI/CD**
-   - Create .github/workflows directory
-   - Write ci.yml workflow
+2. **Set Up Docker Compose**
+   - Create docker-compose.yml
    - Configure PostgreSQL service
-   - Add caching and optimization
+   - Set up API service with environment
+   - Define volumes and networks
+
+3. **Create Kubernetes Manifests**
+   - Create k8s directory
+   - Write deployment.yaml with full configuration
+   - Create service.yaml for networking
+   - Consider adding ConfigMap/Secret templates
+
+4. **Implement Build Script**
+   - Create scripts/build_image.sh
+   - Add git-based versioning
+   - Include tagging strategy
+   - Make script executable
+
+5. **Create Deploy Script**
+   - Write scripts/deploy_k8s.sh
+   - Add namespace configuration
+   - Include rollout verification
+   - Make script executable
 
 ## Testing Checklist
-- [ ] Test utilities module created
-- [ ] Test database configuration set
-- [ ] Database setup script working
-- [ ] Coverage tool installed
-- [ ] Test runner script functional
-- [ ] CI workflow configured
-- [ ] All tests passing locally
-- [ ] Coverage reports generating
-- [ ] CI pipeline running successfully
+- [ ] Dockerfile builds successfully
+- [ ] Docker image runs without errors
+- [ ] Docker Compose environment starts
+- [ ] API accessible via Docker Compose
+- [ ] Database connection works in container
+- [ ] Kubernetes manifests are valid
+- [ ] Deployment creates pods successfully
+- [ ] Service routes traffic correctly
+- [ ] Health probes pass
+- [ ] Scaling works as expected
 
 ## Validation Steps
-1. Run `./scripts/setup_test_db.sh` to verify database setup
-2. Execute `cargo test` to run all tests
-3. Run `./scripts/run_tests.sh` for coverage
-4. Push to branch to trigger CI
-5. Verify coverage report in `./coverage/`
+1. Build Docker image: `docker build -t rust-basic-api:test .`
+2. Run container: `docker run -p 3000:3000 rust-basic-api:test`
+3. Start Docker Compose: `docker-compose up -d`
+4. Test health endpoint: `curl http://localhost:3000/health`
+5. Validate Kubernetes manifests: `kubectl apply --dry-run=client -f k8s/`
+6. Deploy to local cluster: `./scripts/deploy_k8s.sh`
+7. Check pod status: `kubectl get pods`
+8. Test scaling: `kubectl scale deployment/rust-basic-api --replicas=5`
 
 ## Expected Outcomes
-- Complete test infrastructure in place
-- Automated testing on every commit
-- Coverage reports available
-- CI/CD pipeline operational
-- Test utilities ready for use
-- Documentation for testing practices
+- Optimized Docker image under 100MB
+- Fast build times with proper caching
+- Working local development environment
+- Production-ready Kubernetes configuration
+- Automated deployment scripts
+- Health monitoring implemented
+- Scalable architecture
+
+## Configuration Management
+- Use environment variables for configuration
+- Implement secret management for sensitive data
+- Support multiple environments (dev/staging/prod)
+- Document all configuration options
+
+## Performance Considerations
+- Minimize image size with multi-stage builds
+- Use specific base image versions
+- Implement proper resource limits
+- Configure horizontal pod autoscaling
+- Optimize build cache usage
+
+## Security Requirements
+- Run containers as non-root user (consider adding)
+- Use secrets for database credentials
+- Implement network policies (future enhancement)
+- Scan images for vulnerabilities
+- Use read-only root filesystem where possible
 
 ## Error Handling
-- Handle Docker container failures gracefully
-- Provide clear error messages for setup issues
-- Implement retry logic for flaky operations
-- Log detailed information for debugging
+- Graceful shutdown on SIGTERM
+- Proper error logging
+- Health check failure handling
+- Database connection retry logic
+- Container restart policies
 
 ## Notes
-- Ensure all scripts are executable (`chmod +x`)
-- Test database should be isolated from development
-- Coverage threshold can be configured later
-- Consider adding performance benchmarks
-- Document testing best practices for team
+- Test with local Kubernetes (minikube/kind)
+- Consider adding Helm charts for complex deployments
+- Document deployment procedures thoroughly
+- Plan for zero-downtime deployments
+- Consider adding init containers for migrations
 
-Remember to test each component thoroughly before moving to the next. The testing infrastructure should be reliable, fast, and easy to maintain.
+Remember to test each component thoroughly in isolation before integrating. The containerization should support both local development and production deployment scenarios efficiently.

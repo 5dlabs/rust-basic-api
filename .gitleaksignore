@@ -5,3 +5,9 @@
 # Test configuration files with non-sensitive placeholder credentials
 .env.test:*
 .github/workflows/ci.yml:*
+
+# Kubernetes secret templates - contain placeholder examples only
+k8s/secret.yaml.template:*
+
+# Deployment scripts with example commands showing placeholder credentials
+scripts/deploy_k8s.sh:*
