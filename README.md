@@ -131,16 +131,94 @@ rust-basic-api/
 
 ## Testing
 
-The project includes comprehensive test coverage:
-- **31 unit tests** covering all modules
-- Config module: Environment variable handling
-- Error module: Error types and HTTP responses
-- Main module: Server initialization and routing
+The project includes comprehensive test coverage with multiple test layers:
+- **Unit Tests**: Testing individual functions and modules
+- **Integration Tests**: Testing database operations and API endpoints
+- **Test Utilities**: Reusable test helpers and factory functions
+- **Code Coverage**: Automated coverage reporting with cargo-llvm-cov
 
-Run tests:
+### Quick Test Commands
+
+Run all tests:
 ```bash
-cargo test
+cargo test --workspace --all-features
 ```
+
+Run with coverage:
+```bash
+./scripts/run_tests.sh
+```
+
+### Test Infrastructure
+
+#### 1. Test Database Setup
+The project uses a dedicated PostgreSQL test database for integration tests.
+
+First, set up your test environment:
+```bash
+# Copy test environment template
+cp .env.test.example .env.test
+# Edit .env.test and set your test database credentials
+```
+
+Then start the test database:
+```bash
+# Start test database
+./scripts/setup_test_db.sh start
+
+# Check status
+./scripts/setup_test_db.sh status
+
+# Stop test database
+./scripts/setup_test_db.sh stop
+```
+
+The test database runs in a Docker container on port 5432 with credentials specified in `.env.test`.
+
+#### 2. Test Execution Script
+The `scripts/run_tests.sh` script provides automated test execution with coverage:
+
+```bash
+# Run all tests with coverage
+./scripts/run_tests.sh
+
+# Run without database setup
+./scripts/run_tests.sh --no-setup
+
+# Set coverage threshold
+./scripts/run_tests.sh --fail-under 90
+
+# Clean coverage artifacts
+./scripts/run_tests.sh --clean
+```
+
+Coverage reports are generated in `./coverage/html/index.html`.
+
+#### 3. Test Utilities
+The project provides test utilities in `src/test_utils.rs`:
+
+```rust
+use rust_basic_api::test_utils::factories::*;
+
+// Create test user
+let user = create_test_user(1);
+
+// Create user request
+let request = create_user_request(1);
+
+// Create update request
+let update = update_user_request(1);
+```
+
+#### 4. Continuous Integration
+GitHub Actions runs automated tests on every push and pull request:
+- Code formatting checks
+- Clippy linting (pedantic mode)
+- Unit tests
+- Integration tests with PostgreSQL
+- Code coverage reporting
+
+See `.github/workflows/ci.yml` for the complete CI pipeline.
 
 ## License
 
