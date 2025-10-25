@@ -8,6 +8,9 @@ pub mod models;
 pub mod repository;
 pub mod routes;
 
+#[cfg(test)]
+pub mod test_utils;
+
 use sqlx::PgPool;
 
 /// Application state shared across all request handlers

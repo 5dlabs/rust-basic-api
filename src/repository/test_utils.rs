@@ -36,16 +36,25 @@ static INIT: Once = Once::new();
 pub async fn setup_test_database() -> PgPool {
     INIT.call_once(|| {
         // Load test environment variables (only once per test run)
-        // Silently ignore if .env.test doesn't exist
-        dotenvy::from_filename(".env.test").ok();
+        // Use override to replace placeholder values from workflow
+        let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").ok();
+        if let Some(dir) = manifest_dir {
+            let env_path = std::path::Path::new(&dir).join(".env.test");
+            if env_path.exists() {
+                dotenvy::from_path_override(&env_path).ok();
+            }
+        } else {
+            // Fallback to current directory
+            dotenvy::from_filename_override(".env.test").ok();
+        }
     });
 
     let database_url = std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set for database tests (see .env.test.example)");
 
-    let pool = super::create_pool(&database_url)
-        .await
-        .expect("Failed to create test database pool");
+    let pool = super::create_pool(&database_url).await.unwrap_or_else(|e| {
+        panic!("Failed to create test database pool. URL: '{database_url}', Error: {e:?}")
+    });
 
     // Run migrations to ensure schema is up to date
     sqlx::migrate!()

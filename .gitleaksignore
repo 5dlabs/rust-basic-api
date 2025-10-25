@@ -1,3 +1,7 @@
 # Gitleaks ignore file
 # Test database connection strings are constructed programmatically in test code
 # using obviously fake credentials to avoid false positive secret detection
+
+# Test configuration files with non-sensitive placeholder credentials
+.env.test:*
+.github/workflows/ci.yml:*

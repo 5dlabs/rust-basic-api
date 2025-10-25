@@ -39,8 +39,13 @@ hooks/
 
 # Environment files with secrets
 .env
+.env.test
+# Note: .env.test.example is tracked as a template
 
 # Code coverage reports
 lcov.info
 *.profraw
 *.profdata
+coverage/
+target/llvm-cov/
+target/llvm-cov-target/

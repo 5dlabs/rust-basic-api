@@ -5,6 +5,23 @@
 
 use rust_basic_api::repository::test_utils::{cleanup_database, setup_test_database};
 
+/// Check if database tests should be skipped
+///
+/// Tests are skipped if `DATABASE_URL` is not set or contains placeholder values
+fn should_skip_database_tests() -> bool {
+    match std::env::var("DATABASE_URL") {
+        Ok(url) => {
+            // Skip if URL contains placeholder markers
+            url.contains("<scheme>")
+                || url.contains("<credentials>")
+                || url.contains("<host>")
+                || url.contains("<port>")
+                || url.contains("<database>")
+        }
+        Err(_) => true, // Skip if not set
+    }
+}
+
 // Helper structs for query results
 #[derive(sqlx::FromRow)]
 struct InsertResult {
@@ -26,8 +43,8 @@ struct TimestampTest {
 
 #[tokio::test]
 async fn test_database_connection() {
-    // Skip if DATABASE_URL not set
-    if std::env::var("DATABASE_URL").is_err() {
+    // Skip if DATABASE_URL not set or is a placeholder
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -39,7 +56,7 @@ async fn test_database_connection() {
 
 #[tokio::test]
 async fn test_users_table_exists() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -63,7 +80,7 @@ async fn test_users_table_exists() {
 
 #[tokio::test]
 async fn test_users_table_columns() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -105,7 +122,7 @@ async fn test_users_table_columns() {
 
 #[tokio::test]
 async fn test_users_indexes_exist() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -144,7 +161,7 @@ async fn test_users_indexes_exist() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_user_insertion() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -173,7 +190,7 @@ async fn test_user_insertion() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_email_unique_constraint() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -208,7 +225,7 @@ async fn test_email_unique_constraint() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_updated_at_trigger() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -269,7 +286,7 @@ async fn test_updated_at_trigger() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_not_null_constraints() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -306,7 +323,7 @@ async fn test_not_null_constraints() {
 #[tokio::test]
 #[serial_test::serial]
 async fn test_default_timestamps() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
@@ -342,7 +359,7 @@ async fn test_default_timestamps() {
 
 #[tokio::test]
 async fn test_migration_idempotency() {
-    if std::env::var("DATABASE_URL").is_err() {
+    if should_skip_database_tests() {
         // Test skipped, no database configured
         return;
     }
