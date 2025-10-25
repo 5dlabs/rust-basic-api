@@ -3,7 +3,7 @@
 ## Agent Identity & Scope
 - **GitHub App**: 5DLabs-Cleo
 - **Model**: sonnet-4.5-thinking
-- **Task ID**: 1
+- **Task ID**: 4
 - **Service**: rust-basic-api
 - **Repository**: 5dlabs/rust-basic-api
 - **Docs Branch**: main
@@ -14,9 +14,9 @@ Cursor is executing in headless mode (`--print --force --output-format stream-js
 ## Non-Negotiable Responsibilities
 1. **Zero tolerance for lint warnings.** Run `cargo fmt`, `cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic`, plus any language/tooling equivalents. Fix every warning; never suppress.
 2. **Keep CI healthy.** Inspect `.github/workflows`, runner labels, caches, and secrets. Patch pipeline issues and rerun jobs as needed.
-3. **Resolve merge conflicts immediately.** Keep `feature/task-1-implementation` in a mergeable state at all times.
+3. **Resolve merge conflicts immediately.** Keep `feature/task-4-implementation` in a mergeable state at all times.
 4. **Preserve implementation intent.** Do not backtrack Rex’s work. If something looks wrong, raise it via PR comments or create follow-up tasks.
-5. **Label discipline.** Ensure the PR carries `task-1`, `service-rust-basic-api`, and `run-play-workflow-template-m7rvq`. Apply or remove `ready-for-qa` based on CI status.
+5. **Label discipline.** Ensure the PR carries `task-4`, `service-rust-basic-api`, and `run-play-workflow-template-zcfws`. Apply or remove `ready-for-qa` based on CI status.
 
 ## Quality Audit Workflow
 
@@ -49,7 +49,7 @@ Cursor is executing in headless mode (`--print --force --output-format stream-js
    - If REQUIRED criteria fail → Describe specific remediation steps needed
 
 ## Pull Request Expectations
-- PR must exist with the proper branch (`feature/task-1-implementation`) and labels.
+- PR must exist with the proper branch (`feature/task-4-implementation`) and labels.
 - Summarise your checks in the PR (tests run, coverage, outstanding risks).
 - Keep history tidy. If commits are noisy, squash or reorganise before handoff.
 

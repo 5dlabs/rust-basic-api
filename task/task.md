@@ -1,182 +1,188 @@
-# Task 1: Project Setup and Configuration
+# Task 4: User Repository Implementation
 
 ## Overview
-Initialize the Rust project with Cargo, set up the project structure, and configure dependencies for building a production-ready REST API with Axum framework.
+Implement the UserRepository trait and SQLx-based implementation for database operations. This task establishes the data access layer that provides an abstraction over database operations, following the repository pattern for clean architecture.
 
-## Technical Requirements
+## Dependencies
+- Task 2: Database setup and connection (pool creation)
+- Task 3: Data models and error handling (User model, error types)
 
-### 1. Project Initialization
-- Create a new Rust binary project using Cargo
-- Configure the project for async runtime with Tokio
-- Set up proper error handling with anyhow and thiserror
+## Technical Specifications
 
-### 2. Dependencies Configuration
-Update `Cargo.toml` with the following dependencies:
+### 1. Repository Pattern
+Define a trait-based abstraction for data access:
+- **Trait Definition**: Async trait for database operations
+- **Implementation**: SQLx-based concrete implementation
+- **Connection Management**: Use connection pool for efficiency
+- **Error Handling**: Proper error mapping and propagation
 
-```toml
-[dependencies]
-axum = "0.6.0"
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-sqlx = { version = "0.6", features = ["runtime-tokio-rustls", "postgres", "chrono", "json"] }
-tracing = "0.1"
-tracing-subscriber = "0.3"
-dotenv = "0.15"
-anyhow = "1.0"
-thiserror = "1.0"
-```
+### 2. CRUD Operations
+Implement complete CRUD functionality:
+- **Create**: Insert new users with auto-generated timestamps
+- **Read**: Get single user by ID or all users
+- **Update**: Partial updates with dynamic query building
+- **Delete**: Remove users and return success status
 
-### 3. Project Structure
-Create the following directory structure:
-
-```
-rust-basic-api/
-├── src/
-│   ├── main.rs           # Application entry point
-│   ├── config.rs         # Configuration management
-│   ├── error.rs          # Error types and handling
-│   ├── models/           # Data models
-│   │   └── mod.rs
-│   ├── routes/           # API route handlers
-│   │   └── mod.rs
-│   └── repository/       # Database interaction layer
-│       └── mod.rs
-├── Cargo.toml
-├── .env.example
-├── Dockerfile
-└── docker-compose.yml
-```
+### 3. Database Interaction
+Use SQLx for type-safe database operations:
+- **Query Macros**: Use `query_as!` for compile-time SQL verification
+- **Type Safety**: Automatic mapping between SQL and Rust types
+- **Transaction Support**: Enable transaction-based operations
+- **Connection Pooling**: Efficient resource management
 
 ## Implementation Guide
 
-### Step 1: Create New Rust Project
-```bash
-cargo new rust-basic-api --bin
-cd rust-basic-api
+### Step 1: Add Dependencies
+Update `Cargo.toml`:
+```toml
+async-trait = "0.1"
 ```
 
-### Step 2: Configure Dependencies
-Replace the contents of `Cargo.toml` with the dependency list above.
+### Step 2: Define Repository Trait
+1. Create `src/repository/user_repository.rs`
+2. Define `UserRepository` trait with async methods
+3. Use `async_trait` macro for async trait support
 
-### Step 3: Implement Configuration Module
-Create `src/config.rs` with environment-based configuration:
+### Step 3: Implement SQLx Repository
+1. Create `SqlxUserRepository` struct
+2. Store `PgPool` for database connections
+3. Implement all CRUD operations
+4. Handle database errors appropriately
 
-```rust
-use dotenv::dotenv;
-use std::env;
+### Step 4: Dynamic Update Query
+Build update queries dynamically:
+1. Check if user exists before updating
+2. Build SQL based on provided fields
+3. Use parameterized queries for safety
+4. Return updated user or None
 
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub database_url: String,
-    pub server_port: u16,
-}
+### Step 5: Module Organization
+1. Update `src/repository/mod.rs`
+2. Export public types
+3. Maintain existing pool creation function
 
-impl Config {
-    pub fn from_env() -> Result<Self, env::VarError> {
-        dotenv().ok();
-        
-        let database_url = env::var("DATABASE_URL")?;
-        let server_port = env::var("SERVER_PORT")
-            .unwrap_or_else(|_| "3000".to_string())
-            .parse()
-            .unwrap_or(3000);
-            
-        Ok(Config {
-            database_url,
-            server_port,
-        })
-    }
-}
-```
-
-### Step 4: Implement Main Application
-Create `src/main.rs` with basic server setup:
-
-```rust
-mod config;
-mod error;
-mod models;
-mod routes;
-mod repository;
-
-use config::Config;
-use std::net::SocketAddr;
-use axum::Router;
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    // Initialize tracing
-    tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "info".into()),
-        ))
-        .with(tracing_subscriber::fmt::layer())
-        .init();
-    
-    // Load configuration
-    let config = Config::from_env()?;
-    
-    // Build application router
-    let app = Router::new()
-        .route("/health", axum::routing::get(health_check));
-    
-    // Run the server
-    let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
-    tracing::info!("Listening on {}", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await?;
-    
-    Ok(())
-}
-
-async fn health_check() -> &'static str {
-    "OK"
-}
-```
-
-### Step 5: Create Module Placeholders
-Create empty module files:
-- `src/error.rs`
-- `src/models/mod.rs`
-- `src/routes/mod.rs`
-- `src/repository/mod.rs`
-
-### Step 6: Docker Configuration
-Create `Dockerfile`:
-
-```dockerfile
-FROM rust:1.70 as builder
-WORKDIR /app
-COPY Cargo.* ./
-COPY src ./src
-RUN cargo build --release
-
-FROM debian:bullseye-slim
-WORKDIR /app
-COPY --from=builder /app/target/release/rust-basic-api /app/
-EXPOSE 3000
-CMD ["./rust-basic-api"]
-```
-
-### Step 7: Environment Configuration
-Create `.env.example`:
+## Code Structure
 
 ```
-DATABASE_URL=postgresql://user:password@your-database-host:5432/your-database
-SERVER_PORT=3000
-RUST_LOG=info
+src/repository/
+├── mod.rs                  # Module exports and pool creation
+├── user_repository.rs      # Trait and implementation
+└── user_repository_test.rs # Integration tests
 ```
 
-## Dependencies and Prerequisites
-- Rust 1.70 or later
-- Cargo package manager
-- Docker (optional for containerization)
-- Access to a PostgreSQL database (via DATABASE_URL environment variable)
+## Key Design Decisions
 
-## Related Tasks
-- Task 2: Database Setup (depends on this task)
-- Task 3: API Server Implementation (depends on this task)
-- Task 4: User Authentication (depends on this task)
+### Repository Pattern Benefits
+- **Abstraction**: Decouple business logic from data access
+- **Testability**: Easy to mock for unit tests
+- **Flexibility**: Switch database implementations easily
+- **Type Safety**: Compile-time SQL verification with SQLx
+
+### Async Operations
+- All methods are async for non-blocking I/O
+- Use `async_trait` for trait support
+- Proper error propagation with `?` operator
+
+### Error Handling Strategy
+- Map SQLx errors to ApiError
+- Return Option for queries that may not find results
+- Provide meaningful error messages
+- Log database errors for debugging
+
+## SQL Queries
+
+### Create User
+```sql
+INSERT INTO users (name, email) 
+VALUES ($1, $2) 
+RETURNING id, name, email, created_at, updated_at
+```
+
+### Get User by ID
+```sql
+SELECT id, name, email, created_at, updated_at 
+FROM users 
+WHERE id = $1
+```
+
+### Update User (Dynamic)
+```sql
+UPDATE users 
+SET updated_at = NOW(), 
+    name = $2,  -- if provided
+    email = $3  -- if provided
+WHERE id = $1 
+RETURNING id, name, email, created_at, updated_at
+```
+
+## Testing Strategy
+
+### Integration Tests
+1. **Create User**: Verify insertion and ID generation
+2. **Get User**: Test retrieval by ID
+3. **Update User**: Test partial updates
+4. **Delete User**: Verify deletion and cascade effects
+5. **List Users**: Test pagination and ordering
+
+### Transaction Tests
+- Test rollback behavior
+- Verify isolation levels
+- Check concurrent access handling
+
+### Error Cases
+- Duplicate email handling
+- Non-existent user operations
+- Database connection failures
+- Invalid data types
+
+## Performance Considerations
+
+### Connection Pooling
+- Reuse database connections
+- Configure pool size appropriately
+- Monitor connection usage
+
+### Query Optimization
+- Use indexes on frequently queried fields
+- Avoid N+1 query problems
+- Consider pagination for large result sets
+
+### Caching Strategy
+- Consider caching frequently accessed users
+- Invalidate cache on updates
+- Use appropriate TTL values
+
+## Success Criteria
+- All CRUD operations work correctly
+- SQL queries are type-safe and verified at compile time
+- Proper error handling and logging
+- Integration tests pass
+- No SQL injection vulnerabilities
+- Efficient use of database connections
+
+## Best Practices
+- Use parameterized queries to prevent SQL injection
+- Always use transactions for multi-step operations
+- Log slow queries for performance monitoring
+- Keep repository methods focused and single-purpose
+- Use meaningful variable and function names
+
+## Common Pitfalls to Avoid
+- Don't expose SQL errors directly to users
+- Avoid building SQL strings with string concatenation
+- Don't forget to handle None cases for optional queries
+- Remember to update `updated_at` on modifications
+- Don't leak database connections
+
+## Future Enhancements
+- Add pagination support for list operations
+- Implement soft deletes
+- Add query filtering and sorting
+- Support bulk operations
+- Add caching layer
+
+## Related Documentation
+- [SQLx Documentation](https://docs.rs/sqlx/)
+- [Async Trait Documentation](https://docs.rs/async-trait/)
+- [Repository Pattern](https://martinfowler.com/eaaCatalog/repository.html)
+- [PostgreSQL Best Practices](https://wiki.postgresql.org/wiki/Main_Page)
