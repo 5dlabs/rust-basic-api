@@ -1,10 +1,11 @@
+---
 name: CI/CD Pipeline
 
-on:
+"on":
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   contents: read
@@ -58,7 +59,9 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Run clippy (pedantic)
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings -W clippy::pedantic
+        run: |
+          cargo clippy --workspace --all-targets --all-features \
+            -- -D warnings -W clippy::pedantic
 
       - name: Build project
         run: cargo build --workspace --all-features
@@ -182,7 +185,18 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const body = `### 🐳 Docker Image Built Successfully\n\n✅ Docker image built and verified.\n\n**Note:** Images are only pushed to GHCR when merged to main branch.\n\n**Build verified with:**\n- Multi-stage Docker build\n- Dependency caching\n- Slim runtime image\n\n**Ready for deployment after merge!** 🚀`;
+            const body = `### 🐳 Docker Image Built Successfully
+
+            ✅ Docker image built and verified.
+
+            **Note:** Images are only pushed to GHCR when merged to main branch.
+
+            **Build verified with:**
+            - Multi-stage Docker build
+            - Dependency caching
+            - Slim runtime image
+
+            **Ready for deployment after merge!** 🚀`;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
