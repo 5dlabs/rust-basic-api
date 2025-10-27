@@ -2,12 +2,14 @@
 //!
 //! A production-ready REST API built with Axum framework.
 
+mod app_state;
 mod config;
 mod error;
 mod models;
 mod repository;
 mod routes;
 
+use crate::app_state::AppState;
 use crate::config::Config;
 use axum::{routing::get, Router};
 use std::net::SocketAddr;
@@ -35,11 +37,23 @@ async fn main() -> anyhow::Result<()> {
         "Configuration loaded"
     );
 
+    // Initialize database pool and run migrations
+    let pool = repository::init_pool_and_migrate(&config)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to init DB: {e}"))?;
+
+    let state = AppState { db: pool };
+    // Verify DB connectivity at startup
+    repository::db_ping(&state.db)
+        .await
+        .map_err(|e| anyhow::anyhow!("Database ping failed: {e}"))?;
+
     // Build application router
     let app = Router::new()
         .route("/health", get(health_check))
         .merge(routes::build_routes())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .with_state(state);
 
     // Create socket address
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));

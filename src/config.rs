@@ -11,6 +11,16 @@ pub struct Config {
     pub database_url: String,
     /// Server port for HTTP listener
     pub server_port: u16,
+    /// Database pool: maximum connections
+    pub db_max_connections: u32,
+    /// Database pool: minimum idle connections
+    pub db_min_connections: u32,
+    /// Database pool: connect timeout in seconds
+    pub db_connect_timeout_secs: u64,
+    /// Database pool: idle timeout in seconds
+    pub db_idle_timeout_secs: u64,
+    /// Database pool: acquire timeout in seconds
+    pub db_acquire_timeout_secs: u64,
 }
 
 impl Config {
@@ -20,6 +30,11 @@ impl Config {
     ///
     /// - `DATABASE_URL` (required): `PostgreSQL` connection string
     /// - `SERVER_PORT` (optional): HTTP server port, defaults to 3000
+    /// - `DB_MAX_CONNECTIONS` (optional): max connections, default 10
+    /// - `DB_MIN_CONNECTIONS` (optional): min idle connections, default 1
+    /// - `DB_CONNECT_TIMEOUT_SECS` (optional): connect timeout, default 5
+    /// - `DB_IDLE_TIMEOUT_SECS` (optional): idle timeout, default 300
+    /// - `DB_ACQUIRE_TIMEOUT_SECS` (optional): acquire timeout, default 30
     ///
     /// # Errors
     ///
@@ -32,10 +47,35 @@ impl Config {
             .unwrap_or_else(|_| "3000".to_string())
             .parse()
             .unwrap_or(3000);
+        let db_max_connections = env::var("DB_MAX_CONNECTIONS")
+            .unwrap_or_else(|_| "10".to_string())
+            .parse()
+            .unwrap_or(10);
+        let db_min_connections = env::var("DB_MIN_CONNECTIONS")
+            .unwrap_or_else(|_| "1".to_string())
+            .parse()
+            .unwrap_or(1);
+        let db_connect_timeout_secs = env::var("DB_CONNECT_TIMEOUT_SECS")
+            .unwrap_or_else(|_| "5".to_string())
+            .parse()
+            .unwrap_or(5);
+        let db_idle_timeout_secs = env::var("DB_IDLE_TIMEOUT_SECS")
+            .unwrap_or_else(|_| "300".to_string())
+            .parse()
+            .unwrap_or(300);
+        let db_acquire_timeout_secs = env::var("DB_ACQUIRE_TIMEOUT_SECS")
+            .unwrap_or_else(|_| "30".to_string())
+            .parse()
+            .unwrap_or(30);
 
         Ok(Self {
             database_url,
             server_port,
+            db_max_connections,
+            db_min_connections,
+            db_connect_timeout_secs,
+            db_idle_timeout_secs,
+            db_acquire_timeout_secs,
         })
     }
 }

@@ -63,11 +63,14 @@ This will start both the API server and a PostgreSQL database.
 
 The application is configured via environment variables:
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Required |
-| `SERVER_PORT` | HTTP server port | 3000 |
-| `RUST_LOG` | Log level configuration | `rust_basic_api=info,tower_http=debug` |
+- `DATABASE_URL`: PostgreSQL connection string (Required)
+- `SERVER_PORT`: HTTP server port (default: 3000)
+- `RUST_LOG`: Log level configuration (default: `rust_basic_api=info,tower_http=debug`)
+- `DB_MAX_CONNECTIONS`: pool maximum connections (default: 10)
+- `DB_MIN_CONNECTIONS`: pool minimum idle connections (default: 1)
+- `DB_CONNECT_TIMEOUT_SECS`: connect timeout in seconds (default: 5)
+- `DB_IDLE_TIMEOUT_SECS`: idle timeout in seconds (default: 300)
+- `DB_ACQUIRE_TIMEOUT_SECS`: acquire timeout in seconds (default: 30)
 
 ### Example Configuration
 
@@ -75,6 +78,11 @@ The application is configured via environment variables:
 DATABASE_URL=<your-postgres-connection-string>
 SERVER_PORT=3000
 RUST_LOG=rust_basic_api=info,tower_http=debug
+DB_MAX_CONNECTIONS=10
+DB_MIN_CONNECTIONS=1
+DB_CONNECT_TIMEOUT_SECS=5
+DB_IDLE_TIMEOUT_SECS=300
+DB_ACQUIRE_TIMEOUT_SECS=30
 ```
 
 ## API Endpoints
@@ -91,14 +99,21 @@ RUST_LOG=rust_basic_api=info,tower_http=debug
 rust-basic-api/
 ├── src/
 │   ├── main.rs           # Application entry point
+│   ├── lib.rs            # Library entry (for integration tests)
 │   ├── config.rs         # Configuration management
+│   ├── app_state.rs      # Shared application state
 │   ├── error.rs          # Error types and handling
 │   ├── models/           # Data models
 │   │   └── mod.rs
 │   ├── routes/           # API route handlers
 │   │   └── mod.rs
 │   └── repository/       # Database interaction layer
-│       └── mod.rs
+│       ├── mod.rs
+│       └── test_utils.rs  # Test helpers
+├── migrations/            # SQLx migrations
+│   └── 001_initial_schema.sql
+├── tests/
+│   └── database_integration.rs  # Ignored by default; requires DB
 ├── Cargo.toml            # Project dependencies
 ├── clippy.toml           # Clippy linting configuration
 ├── .env.example          # Environment variables template
