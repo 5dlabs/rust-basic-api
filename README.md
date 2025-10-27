@@ -72,7 +72,7 @@ The application is configured via environment variables:
 ### Example Configuration
 
 ```env
-DATABASE_URL=postgresql://<username>:<password>@localhost:5432/rust_basic_api
+DATABASE_URL=<your-postgres-connection-string>
 SERVER_PORT=3000
 RUST_LOG=rust_basic_api=info,tower_http=debug
 ```
@@ -152,7 +152,7 @@ docker build -t rust-basic-api .
 
 ```bash
 docker run -p 3000:3000 \
-  -e DATABASE_URL=postgresql://<username>:<password>@<host>:<port>/<database> \
+  -e DATABASE_URL=<your-postgres-connection-string> \
   rust-basic-api
 ```
 

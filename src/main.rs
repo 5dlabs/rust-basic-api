@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
         Config::from_env().map_err(|e| anyhow::anyhow!("Failed to load configuration: {e}"))?;
 
     tracing::info!(
-        database_url = %config.database_url,
+        database_url_configured = !config.database_url.is_empty(),
         port = config.server_port,
         "Configuration loaded"
     );
