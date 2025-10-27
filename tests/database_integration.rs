@@ -118,15 +118,14 @@ async fn test_email_index_exists() {
 #[tokio::test]
 async fn test_user_insertion() {
     let pool = setup().await;
-    cleanup(&pool).await;
 
     let result = sqlx::query_scalar::<_, i32>(
-        "INSERT INTO users (name, email) 
-         VALUES ($1, $2) 
+        "INSERT INTO users (name, email)
+         VALUES ($1, $2)
          RETURNING id",
     )
     .bind("Test User")
-    .bind("test@example.com")
+    .bind("test_user_insertion@example.com")
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
@@ -139,12 +138,13 @@ async fn test_user_insertion() {
 #[tokio::test]
 async fn test_email_unique_constraint() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    let unique_email = "unique_constraint_test@example.com";
 
     // First insert should succeed
     sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2)")
         .bind("User 1")
-        .bind("same@example.com")
+        .bind(unique_email)
         .execute(&pool)
         .await
         .expect("First insert should succeed");
@@ -152,7 +152,7 @@ async fn test_email_unique_constraint() {
     // Second insert with same email should fail
     let result = sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2)")
         .bind("User 2")
-        .bind("same@example.com")
+        .bind(unique_email)
         .execute(&pool)
         .await;
 
@@ -167,14 +167,13 @@ async fn test_email_unique_constraint() {
 #[tokio::test]
 async fn test_updated_at_trigger() {
     let pool = setup().await;
-    cleanup(&pool).await;
 
     // Insert a user
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Trigger Test")
-    .bind("trigger@example.com")
+    .bind("trigger_test@example.com")
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
@@ -195,6 +194,7 @@ async fn test_updated_at_trigger() {
     // Update the user
     sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
         .bind("Updated Name")
+        .bind(id)
         .execute(&pool)
         .await
         .expect("Failed to update user");
@@ -224,14 +224,13 @@ async fn test_updated_at_trigger() {
 #[tokio::test]
 async fn test_default_timestamps() {
     let pool = setup().await;
-    cleanup(&pool).await;
 
     // Insert without specifying timestamps
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Default Timestamps")
-    .bind("defaults@example.com")
+    .bind("default_timestamps_test@example.com")
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
@@ -258,11 +257,10 @@ async fn test_default_timestamps() {
 #[tokio::test]
 async fn test_not_null_constraints() {
     let pool = setup().await;
-    cleanup(&pool).await;
 
     // Try to insert without name
     let result = sqlx::query("INSERT INTO users (email) VALUES ($1)")
-        .bind("no-name@example.com")
+        .bind("not_null_test_no_name@example.com")
         .execute(&pool)
         .await;
 
