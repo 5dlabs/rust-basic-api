@@ -100,7 +100,7 @@ mod tests {
     async fn test_health_check_with_db() {
         // Setup test database
         dotenv::from_filename(".env.test").ok();
-        
+
         // Skip test if DATABASE_URL is not configured
         if let Ok(database_url) = std::env::var("DATABASE_URL") {
             if !database_url.is_empty() {
