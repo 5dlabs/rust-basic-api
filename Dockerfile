@@ -1,5 +1,6 @@
 # Build stage
-FROM rust:1.84-slim AS builder
+# Using nightly to support edition2024 required by some dependencies
+FROM rustlang/rust:nightly-slim AS builder
 
 # Install build dependencies
 RUN apt-get update && \
