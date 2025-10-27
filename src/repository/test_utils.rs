@@ -30,11 +30,13 @@ static INIT: Once = Once::new();
 /// ```
 pub async fn setup_test_database() -> PgPool {
     INIT.call_once(|| {
-        dotenv::from_filename(".env.test").ok();
+        // Try to load .env.test file if it exists
+        // If DATABASE_URL is already set in environment (e.g., in CI), that takes precedence
+        let _ = dotenv::from_filename(".env.test");
     });
 
-    let database_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in .env.test for testing");
+    let database_url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set (via .env.test file or environment variable)");
 
     let pool = super::create_pool(&database_url)
         .await
