@@ -30,9 +30,12 @@ pub async fn init_pool_and_migrate(config: &Config) -> anyhow::Result<PgPool> {
     .await
     .map_err(|e| anyhow::anyhow!("Timed out connecting to database: {e}"))??;
 
-    // Run embedded migrations from the migrations/ folder
-    // Safety: uses compile-time embedding to avoid runtime path traversal risks
-    sqlx::migrate!().run(&pool).await?;
+    // Run migrations from the fixed migrations directory at runtime
+    // Path is fixed to project migrations directory to prevent traversal
+    sqlx::migrate::Migrator::new(std::path::Path::new("migrations"))
+        .await?
+        .run(&pool)
+        .await?;
 
     Ok(pool)
 }

@@ -29,7 +29,10 @@ pub async fn test_pool() -> anyhow::Result<PgPool> {
         .await?;
 
     // Ensure migrations are applied for the test database
-    sqlx::migrate!().run(&pool).await?;
+    sqlx::migrate::Migrator::new(std::path::Path::new("migrations"))
+        .await?
+        .run(&pool)
+        .await?;
 
     Ok(pool)
 }
