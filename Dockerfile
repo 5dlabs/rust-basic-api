@@ -12,8 +12,12 @@ RUN mkdir -p src && \
     cargo build --release && \
     rm -rf src
 
-# Copy source code
+# Copy source code and migrations
 COPY src ./src
+COPY migrations ./migrations
+
+# Set DATABASE_URL for sqlx macro compilation (not used at runtime)
+ENV DATABASE_URL=postgres://placeholder
 
 # Build the application
 RUN touch src/main.rs && \
