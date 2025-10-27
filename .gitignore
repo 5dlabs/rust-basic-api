@@ -34,3 +34,5 @@ target
 
 # Environment variables
 .env
+.env.test
+.env.local

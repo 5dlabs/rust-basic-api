@@ -12,8 +12,9 @@ RUN mkdir -p src && \
     cargo build --release && \
     rm -rf src
 
-# Copy source code
+# Copy source code and migrations
 COPY src ./src
+COPY migrations ./migrations
 
 # Build the application
 RUN touch src/main.rs && \

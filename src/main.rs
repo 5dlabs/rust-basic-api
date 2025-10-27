@@ -11,10 +11,12 @@ mod routes;
 
 use crate::app_state::AppState;
 use crate::config::Config;
-use axum::{routing::get, Router};
+use axum::{extract::State, routing::get, Router};
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+// Application state is defined in app_state.rs
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -48,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
         .await
         .map_err(|e| anyhow::anyhow!("Database ping failed: {e}"))?;
 
-    // Build application router
+    // Build application router with state
     let app = Router::new()
         .route("/health", get(health_check))
         .merge(routes::build_routes())
@@ -69,17 +71,15 @@ async fn main() -> anyhow::Result<()> {
 /// Health check endpoint handler
 ///
 /// Returns a simple "OK" status to indicate the server is running.
-async fn health_check() -> &'static str {
-    "OK"
+/// Also verifies database connectivity.
+async fn health_check(State(state): State<AppState>) -> &'static str {
+    match repository::db_ping(&state.db).await {
+        Ok(()) => "OK",
+        Err(_) => "Database connection failed",
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_health_check() {
-        let response = health_check().await;
-        assert_eq!(response, "OK");
-    }
+    // Health check requires a running database; covered by integration tests.
 }

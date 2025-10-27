@@ -34,17 +34,36 @@ A production-ready REST API built with Axum framework, featuring database connec
    # Edit .env with your database credentials
    ```
 
-3. **Build the project**
+3. **Set up the database**
+   
+   Ensure PostgreSQL is running and create a database:
+   ```bash
+   createdb rust_basic_api
+   ```
+
+4. **Run database migrations**
+   
+   Migrations are automatically run when the application starts. To run them manually:
+   ```bash
+   cargo install sqlx-cli --no-default-features --features postgres
+   sqlx migrate run
+   ```
+
+5. **Build the project**
    ```bash
    cargo build
    ```
 
-4. **Run tests**
+6. **Run tests**
    ```bash
+   # Copy test environment template
+   cp .env.test.example .env.test
+   # Edit .env.test with test database credentials
+   
    cargo test --workspace --all-features
    ```
 
-5. **Start the server**
+7. **Start the server**
    ```bash
    cargo run
    ```
@@ -85,13 +104,49 @@ DB_IDLE_TIMEOUT_SECS=300
 DB_ACQUIRE_TIMEOUT_SECS=30
 ```
 
+## Database Schema
+
+The application uses PostgreSQL with the following schema:
+
+### Users Table
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| `id` | SERIAL | PRIMARY KEY |
+| `name` | VARCHAR(255) | NOT NULL |
+| `email` | VARCHAR(255) | UNIQUE, NOT NULL |
+| `created_at` | TIMESTAMP WITH TIME ZONE | DEFAULT CURRENT_TIMESTAMP |
+| `updated_at` | TIMESTAMP WITH TIME ZONE | DEFAULT CURRENT_TIMESTAMP |
+
+**Indexes:**
+- `idx_users_email` on `email` column
+- `idx_users_created_at` on `created_at` column (descending)
+
+**Triggers:**
+- `update_users_updated_at` - Automatically updates `updated_at` on row modifications
+
+### Migrations
+
+Database migrations are stored in the `migrations/` directory and are automatically applied when the application starts. Migrations use SQLx and can also be run manually:
+
+```bash
+# Run pending migrations
+sqlx migrate run
+
+# Revert last migration
+sqlx migrate revert
+
+# Show migration status
+sqlx migrate info
+```
+
 ## API Endpoints
 
 ### Health Check
 
 - **GET** `/health`
-  - Returns: `"OK"`
-  - Description: Health check endpoint to verify server is running
+  - Returns: `"OK"` if server and database are healthy
+  - Description: Health check endpoint to verify server and database connectivity
 
 ## Project Structure
 
