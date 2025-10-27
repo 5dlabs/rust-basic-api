@@ -25,14 +25,6 @@ async fn setup() -> PgPool {
     pool
 }
 
-/// Helper function to cleanup test data
-async fn cleanup(pool: &PgPool) {
-    sqlx::query("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup database");
-}
-
 /// Helper function to cleanup specific test data by email
 async fn cleanup_by_email(pool: &PgPool, email: &str) {
     sqlx::query("DELETE FROM users WHERE email = $1")
