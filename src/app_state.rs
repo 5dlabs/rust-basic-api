@@ -1,6 +1,6 @@
 //! Application shared state
 
-use sqlx::postgres::PgPool;
+use sqlx_postgres::PgPool;
 
 /// Global application state shared across handlers.
 #[derive(Clone)]

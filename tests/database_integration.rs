@@ -1,5 +1,7 @@
 #[path = "../src/repository/test_utils.rs"]
 mod test_utils;
+use sqlx::query::query;
+use sqlx::query_scalar::query_scalar;
 use sqlx::types::chrono;
 
 #[tokio::test]
@@ -13,7 +15,7 @@ async fn test_users_table_exists() {
 #[ignore = "requires running PostgreSQL with DATABASE_URL set"]
 async fn test_users_indexes_exist() {
     let pool = test_utils::test_pool().await.expect("pool");
-    let idx_email: Option<String> = sqlx::query_scalar(
+    let idx_email: Option<String> = query_scalar(
         "
         SELECT indexname FROM pg_indexes
         WHERE schemaname = 'public' AND tablename = 'users'
@@ -25,7 +27,7 @@ async fn test_users_indexes_exist() {
     .expect("query");
     assert_eq!(idx_email.as_deref(), Some("idx_users_email"));
 
-    let idx_created_at: Option<String> = sqlx::query_scalar(
+    let idx_created_at: Option<String> = query_scalar(
         "
         SELECT indexname FROM pg_indexes
         WHERE schemaname = 'public' AND tablename = 'users'
@@ -41,11 +43,11 @@ async fn test_users_indexes_exist() {
 #[tokio::test]
 #[ignore = "requires running PostgreSQL with DATABASE_URL set"]
 async fn test_users_crud_and_updated_at_trigger() {
-    use sqlx::Row;
+    use sqlx::row::Row;
     let pool = test_utils::test_pool().await.expect("pool");
     let mut tx = test_utils::begin_tx(&pool).await.expect("tx");
 
-    let rec = sqlx::query(
+    let rec = query(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id, created_at, updated_at",
     )
     .bind("Alice")
@@ -60,7 +62,7 @@ async fn test_users_crud_and_updated_at_trigger() {
     assert!(updated_at >= created_at);
 
     // Update and verify updated_at changed
-    let updated = sqlx::query("UPDATE users SET name = $1 WHERE id = $2 RETURNING updated_at")
+    let updated = query("UPDATE users SET name = $1 WHERE id = $2 RETURNING updated_at")
         .bind("Alice Smith")
         .bind(id)
         .fetch_one(&mut *tx)

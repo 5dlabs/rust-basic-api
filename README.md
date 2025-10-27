@@ -226,6 +226,26 @@ docker run -p 3000:3000 \
   rust-basic-api
 ```
 
+### Docker Compose (local)
+
+This setup requires environment variables and does not ship with default credentials to avoid hardcoded secrets.
+
+1) Create a `.env` file with your local values (or export them in your shell):
+
+```
+DB_USER=apiuser
+DB_PASS=strong-local-password
+DB_NAME=rust_basic_api
+```
+
+2) Start the stack:
+
+```
+docker-compose up
+```
+
+Note: In CI, fixed test credentials are used only for ephemeral test containers.
+
 ## Dependencies
 
 Key dependencies:

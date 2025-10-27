@@ -1,4 +1,5 @@
 //! Rust Basic API
+#![forbid(unsafe_code)]
 //!
 //! A production-ready REST API built with Axum framework.
 
@@ -11,7 +12,7 @@ mod routes;
 
 use crate::app_state::AppState;
 use crate::config::Config;
-use axum::{extract::State, routing::get, Router};
+use axum::{extract::State, http::StatusCode, routing::get, Router};
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -72,10 +73,10 @@ async fn main() -> anyhow::Result<()> {
 ///
 /// Returns a simple "OK" status to indicate the server is running.
 /// Also verifies database connectivity.
-async fn health_check(State(state): State<AppState>) -> &'static str {
+async fn health_check(State(state): State<AppState>) -> impl axum::response::IntoResponse {
     match repository::db_ping(&state.db).await {
-        Ok(()) => "OK",
-        Err(_) => "Database connection failed",
+        Ok(()) => (StatusCode::OK, "OK"),
+        Err(_) => (StatusCode::SERVICE_UNAVAILABLE, "Service unavailable"),
     }
 }
 

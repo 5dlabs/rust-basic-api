@@ -4,7 +4,8 @@
 //! including connection pool initialization and migrations.
 
 use crate::config::Config;
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::query::query;
+use sqlx_postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 
 /// Initialize a `PostgreSQL` connection pool using configuration parameters.
@@ -47,7 +48,7 @@ pub async fn init_pool_and_migrate(config: &Config) -> anyhow::Result<PgPool> {
 /// Returns a `sqlx::Error` if the query cannot be executed.
 pub async fn db_ping(pool: &PgPool) -> Result<(), sqlx::Error> {
     // Avoid selecting any user data, prevents leaking information
-    let _ = sqlx::query("SELECT 1").execute(pool).await?;
+    let _ = query("SELECT 1").execute(pool).await?;
     Ok(())
 }
 

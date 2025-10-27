@@ -40,7 +40,8 @@ impl Config {
     ///
     /// Returns an error if required environment variables are missing
     pub fn from_env() -> Result<Self, env::VarError> {
-        dotenv::dotenv().ok();
+        // Load environment variables from a .env file if present (dev/test only)
+        dotenvy::dotenv().ok();
 
         let database_url = env::var("DATABASE_URL")?;
         let server_port = env::var("SERVER_PORT")

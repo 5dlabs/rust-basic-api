@@ -5,7 +5,9 @@
 //! and to verify schema existence. Tests using these utilities should be
 //! marked with `#[ignore]` by default unless a test database is available.
 
-use sqlx::postgres::{PgPool, PgPoolOptions};
+use sqlx::query_scalar::query_scalar;
+use sqlx::transaction::Transaction;
+use sqlx_postgres::{PgPool, PgPoolOptions};
 use std::time::Duration;
 
 /// Create a connection pool for tests using `DATABASE_URL`.
@@ -18,7 +20,8 @@ use std::time::Duration;
 /// to the database cannot be established.
 #[cfg_attr(not(test), allow(dead_code))]
 pub async fn test_pool() -> anyhow::Result<PgPool> {
-    dotenv::dotenv().ok();
+    // Load test env if present
+    dotenvy::dotenv().ok();
     let database_url = std::env::var("DATABASE_URL")?;
     let pool = PgPoolOptions::new()
         .max_connections(5)
@@ -43,7 +46,9 @@ pub async fn test_pool() -> anyhow::Result<PgPool> {
 ///
 /// Returns a `sqlx::Error` if a transaction cannot be started.
 #[cfg_attr(not(test), allow(dead_code))]
-pub async fn begin_tx(pool: &PgPool) -> Result<sqlx::Transaction<'_, sqlx::Postgres>, sqlx::Error> {
+pub async fn begin_tx(
+    pool: &PgPool,
+) -> Result<Transaction<'_, sqlx_postgres::Postgres>, sqlx::Error> {
     pool.begin().await
 }
 
@@ -54,7 +59,7 @@ pub async fn begin_tx(pool: &PgPool) -> Result<sqlx::Transaction<'_, sqlx::Postg
 /// Returns a `sqlx::Error` if the metadata query fails.
 #[cfg_attr(not(test), allow(dead_code))]
 pub async fn users_table_exists(pool: &PgPool) -> Result<bool, sqlx::Error> {
-    let rec = sqlx::query_scalar::<_, i64>(
+    let rec = query_scalar::<_, i64>(
         "
         SELECT COUNT(*)
         FROM information_schema.tables

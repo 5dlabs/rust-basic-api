@@ -1,4 +1,5 @@
 //! Library crate for rust-basic-api, exposing modules for integration testing
+#![forbid(unsafe_code)]
 
 pub mod app_state;
 pub mod config;
