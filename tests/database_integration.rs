@@ -33,6 +33,15 @@ async fn cleanup(pool: &PgPool) {
         .expect("Failed to cleanup database");
 }
 
+/// Helper function to cleanup specific test data by email
+async fn cleanup_by_email(pool: &PgPool, email: &str) {
+    sqlx::query("DELETE FROM users WHERE email = $1")
+        .bind(email)
+        .execute(pool)
+        .await
+        .ok(); // Ignore errors if row doesn't exist
+}
+
 #[tokio::test]
 async fn test_users_table_exists() {
     let pool = setup().await;
@@ -118,6 +127,7 @@ async fn test_email_index_exists() {
 #[tokio::test]
 async fn test_user_insertion() {
     let pool = setup().await;
+    let email = "test_user_insertion@example.com";
 
     let result = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email)
@@ -125,20 +135,19 @@ async fn test_user_insertion() {
          RETURNING id",
     )
     .bind("Test User")
-    .bind("test_user_insertion@example.com")
+    .bind(email)
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
 
     assert!(result > 0, "Inserted user should have positive ID");
 
-    cleanup(&pool).await;
+    cleanup_by_email(&pool, email).await;
 }
 
 #[tokio::test]
 async fn test_email_unique_constraint() {
     let pool = setup().await;
-
     let unique_email = "unique_constraint_test@example.com";
 
     // First insert should succeed
@@ -161,19 +170,20 @@ async fn test_email_unique_constraint() {
         "Second insert with duplicate email should fail"
     );
 
-    cleanup(&pool).await;
+    cleanup_by_email(&pool, unique_email).await;
 }
 
 #[tokio::test]
 async fn test_updated_at_trigger() {
     let pool = setup().await;
+    let email = "trigger_test@example.com";
 
     // Insert a user
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Trigger Test")
-    .bind("trigger_test@example.com")
+    .bind(email)
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
@@ -218,19 +228,20 @@ async fn test_updated_at_trigger() {
         "updated_at should be later than created_at"
     );
 
-    cleanup(&pool).await;
+    cleanup_by_email(&pool, email).await;
 }
 
 #[tokio::test]
 async fn test_default_timestamps() {
     let pool = setup().await;
+    let email = "default_timestamps_test@example.com";
 
     // Insert without specifying timestamps
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Default Timestamps")
-    .bind("default_timestamps_test@example.com")
+    .bind(email)
     .fetch_one(&pool)
     .await
     .expect("Failed to insert user");
@@ -251,7 +262,7 @@ async fn test_default_timestamps() {
     assert!(created_at.is_some(), "created_at should have default value");
     assert!(updated_at.is_some(), "updated_at should have default value");
 
-    cleanup(&pool).await;
+    cleanup_by_email(&pool, email).await;
 }
 
 #[tokio::test]
@@ -273,6 +284,5 @@ async fn test_not_null_constraints() {
         .await;
 
     assert!(result.is_err(), "Insert without email should fail");
-
-    cleanup(&pool).await;
+    // No cleanup needed - no users were inserted
 }
