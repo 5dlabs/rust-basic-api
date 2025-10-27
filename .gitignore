@@ -24,3 +24,12 @@ target
 # Added by cargo
 
 /target
+
+# Environment files - never commit
+.env
+.env.local
+
+# Hook files - never commit
+hooks/
+.hooks/
+**/hooks/
