@@ -25,14 +25,6 @@ async fn setup() -> PgPool {
     pool
 }
 
-/// Helper function to cleanup test data
-async fn cleanup(pool: &PgPool) {
-    sqlx::query("TRUNCATE TABLE users RESTART IDENTITY CASCADE")
-        .execute(pool)
-        .await
-        .expect("Failed to cleanup database");
-}
-
 #[tokio::test]
 async fn test_users_table_exists() {
     let pool = setup().await;
@@ -118,7 +110,9 @@ async fn test_email_index_exists() {
 #[tokio::test]
 async fn test_user_insertion() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    // Use a transaction for test isolation
+    let mut tx = pool.begin().await.expect("Failed to begin transaction");
 
     let result = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) 
@@ -126,34 +120,37 @@ async fn test_user_insertion() {
          RETURNING id",
     )
     .bind("Test User")
-    .bind("test@example.com")
-    .fetch_one(&pool)
+    .bind("insertion_test@example.com")
+    .fetch_one(&mut *tx)
     .await
     .expect("Failed to insert user");
 
     assert!(result > 0, "Inserted user should have positive ID");
 
-    cleanup(&pool).await;
+    // Rollback transaction to clean up
+    tx.rollback().await.expect("Failed to rollback");
 }
 
 #[tokio::test]
 async fn test_email_unique_constraint() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    // Use a transaction for test isolation
+    let mut tx = pool.begin().await.expect("Failed to begin transaction");
 
     // First insert should succeed
     sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2)")
         .bind("User 1")
-        .bind("same@example.com")
-        .execute(&pool)
+        .bind("unique_test@example.com")
+        .execute(&mut *tx)
         .await
         .expect("First insert should succeed");
 
     // Second insert with same email should fail
     let result = sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2)")
         .bind("User 2")
-        .bind("same@example.com")
-        .execute(&pool)
+        .bind("unique_test@example.com")
+        .execute(&mut *tx)
         .await;
 
     assert!(
@@ -161,21 +158,24 @@ async fn test_email_unique_constraint() {
         "Second insert with duplicate email should fail"
     );
 
-    cleanup(&pool).await;
+    // Rollback transaction to clean up
+    tx.rollback().await.expect("Failed to rollback");
 }
 
 #[tokio::test]
 async fn test_updated_at_trigger() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    // Use a transaction for test isolation
+    let mut tx = pool.begin().await.expect("Failed to begin transaction");
 
     // Insert a user
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Trigger Test")
-    .bind("trigger@example.com")
-    .fetch_one(&pool)
+    .bind("trigger_test@example.com")
+    .fetch_one(&mut *tx)
     .await
     .expect("Failed to insert user");
 
@@ -185,17 +185,18 @@ async fn test_updated_at_trigger() {
             "SELECT created_at, updated_at FROM users WHERE id = $1",
         )
         .bind(id)
-        .fetch_one(&pool)
+        .fetch_one(&mut *tx)
         .await
         .expect("Failed to fetch initial timestamps");
 
-    // Wait a bit to ensure time difference
-    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+    // Wait to ensure time difference (PostgreSQL has microsecond precision)
+    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
 
     // Update the user
     sqlx::query("UPDATE users SET name = $1 WHERE id = $2")
         .bind("Updated Name")
-        .execute(&pool)
+        .bind(id)
+        .execute(&mut *tx)
         .await
         .expect("Failed to update user");
 
@@ -205,7 +206,7 @@ async fn test_updated_at_trigger() {
         (chrono::DateTime<chrono::Utc>, chrono::DateTime<chrono::Utc>),
     >("SELECT created_at, updated_at FROM users WHERE id = $1")
     .bind(id)
-    .fetch_one(&pool)
+    .fetch_one(&mut *tx)
     .await
     .expect("Failed to fetch final timestamps");
 
@@ -218,21 +219,24 @@ async fn test_updated_at_trigger() {
         "updated_at should be later than created_at"
     );
 
-    cleanup(&pool).await;
+    // Rollback transaction to clean up
+    tx.rollback().await.expect("Failed to rollback");
 }
 
 #[tokio::test]
 async fn test_default_timestamps() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    // Use a transaction for test isolation
+    let mut tx = pool.begin().await.expect("Failed to begin transaction");
 
     // Insert without specifying timestamps
     let id = sqlx::query_scalar::<_, i32>(
         "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
     )
     .bind("Default Timestamps")
-    .bind("defaults@example.com")
-    .fetch_one(&pool)
+    .bind("defaults_test@example.com")
+    .fetch_one(&mut *tx)
     .await
     .expect("Failed to insert user");
 
@@ -245,25 +249,28 @@ async fn test_default_timestamps() {
         ),
     >("SELECT created_at, updated_at FROM users WHERE id = $1")
     .bind(id)
-    .fetch_one(&pool)
+    .fetch_one(&mut *tx)
     .await
     .expect("Failed to fetch user");
 
     assert!(created_at.is_some(), "created_at should have default value");
     assert!(updated_at.is_some(), "updated_at should have default value");
 
-    cleanup(&pool).await;
+    // Rollback transaction to clean up
+    tx.rollback().await.expect("Failed to rollback");
 }
 
 #[tokio::test]
 async fn test_not_null_constraints() {
     let pool = setup().await;
-    cleanup(&pool).await;
+
+    // Use a transaction for test isolation
+    let mut tx = pool.begin().await.expect("Failed to begin transaction");
 
     // Try to insert without name
     let result = sqlx::query("INSERT INTO users (email) VALUES ($1)")
         .bind("no-name@example.com")
-        .execute(&pool)
+        .execute(&mut *tx)
         .await;
 
     assert!(result.is_err(), "Insert without name should fail");
@@ -271,10 +278,11 @@ async fn test_not_null_constraints() {
     // Try to insert without email
     let result = sqlx::query("INSERT INTO users (name) VALUES ($1)")
         .bind("No Email")
-        .execute(&pool)
+        .execute(&mut *tx)
         .await;
 
     assert!(result.is_err(), "Insert without email should fail");
 
-    cleanup(&pool).await;
+    // Rollback transaction to clean up
+    tx.rollback().await.expect("Failed to rollback");
 }

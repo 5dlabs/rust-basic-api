@@ -105,20 +105,29 @@ mod tests {
     async fn test_setup_and_cleanup() {
         let pool = setup_test_database().await;
 
+        // Use a transaction for test isolation
+        let mut tx = pool.begin().await.expect("Failed to begin transaction");
+
         // Insert a test user
-        sqlx::query("INSERT INTO users (name, email) VALUES ($1, $2)")
-            .bind("Test User")
-            .bind("test@example.com")
-            .execute(&pool)
-            .await
-            .expect("Failed to insert test user");
+        let id = sqlx::query_scalar::<_, i32>(
+            "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING id",
+        )
+        .bind("Test User")
+        .bind("test_utils_test@example.com")
+        .fetch_one(&mut *tx)
+        .await
+        .expect("Failed to insert test user");
 
         // Verify user exists
-        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
-            .fetch_one(&pool)
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users WHERE id = $1")
+            .bind(id)
+            .fetch_one(&mut *tx)
             .await
             .expect("Failed to count users");
         assert_eq!(count, 1);
+
+        // Commit the transaction
+        tx.commit().await.expect("Failed to commit transaction");
 
         // Clean up
         cleanup_database(&pool).await;

@@ -15,7 +15,7 @@ CREATE INDEX idx_users_created_at ON users(created_at DESC);
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = clock_timestamp();
     RETURN NEW;
 END;
 $$ language 'plpgsql';
