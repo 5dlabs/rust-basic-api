@@ -1,0 +1,16 @@
+.git
+target
+node_modules
+.env
+.env.*
+gitleaks-report.sarif
+gitleaks-local.sarif
+audit.json
+.github
+docs
+.mcp.json
+Cargo.lock.bak
+push.err
+task/
+tests/
+**/*.md
