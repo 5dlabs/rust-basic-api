@@ -33,3 +33,13 @@ target
 hooks/
 .hooks/
 **/hooks/
+
+# MCP and configuration files - never commit
+.mcp.json
+client-config.json
+cto-config.json
+
+# Documentation files (project-specific context)
+CLAUDE.md
+coding-guidelines.md
+github-guidelines.md
