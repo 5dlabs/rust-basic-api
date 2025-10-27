@@ -1,15 +1,22 @@
 # Build stage
 FROM rust:1.84-slim AS builder
 
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-# Copy manifests
-COPY Cargo.toml Cargo.lock* ./
+# Copy manifests and lock file
+COPY Cargo.toml Cargo.lock ./
 
 # Create a dummy main.rs to cache dependencies
 RUN mkdir -p src && \
     echo "fn main() {}" > src/main.rs && \
-    cargo build --release && \
+    cargo build --release --locked && \
     rm -rf src
 
 # Copy source code
@@ -17,7 +24,7 @@ COPY src ./src
 
 # Build the application
 RUN touch src/main.rs && \
-    cargo build --release
+    cargo build --release --locked
 
 # Runtime stage
 FROM debian:bookworm-slim
