@@ -51,13 +51,16 @@ mod tests {
     #[test]
     fn test_config_default_port() {
         let _lock = TEST_LOCK.lock().unwrap();
-        
-        env::set_var("DATABASE_URL", "postgresql://testuser:testpass@localhost/testdb");
+
+        env::set_var(
+            "DATABASE_URL",
+            "postgresql://testuser:testpass@localhost/testdb",
+        );
         env::remove_var("SERVER_PORT");
 
         let config = Config::from_env().expect("Failed to load config");
         assert_eq!(config.server_port, 3000);
-        
+
         // Cleanup
         env::remove_var("DATABASE_URL");
     }
@@ -65,13 +68,16 @@ mod tests {
     #[test]
     fn test_config_custom_port() {
         let _lock = TEST_LOCK.lock().unwrap();
-        
-        env::set_var("DATABASE_URL", "postgresql://testuser:testpass@localhost/testdb");
+
+        env::set_var(
+            "DATABASE_URL",
+            "postgresql://testuser:testpass@localhost/testdb",
+        );
         env::set_var("SERVER_PORT", "8080");
 
         let config = Config::from_env().expect("Failed to load config");
         assert_eq!(config.server_port, 8080);
-        
+
         // Cleanup
         env::remove_var("DATABASE_URL");
         env::remove_var("SERVER_PORT");
@@ -80,7 +86,7 @@ mod tests {
     #[test]
     fn test_config_missing_database_url() {
         let _lock = TEST_LOCK.lock().unwrap();
-        
+
         env::remove_var("DATABASE_URL");
         let result = Config::from_env();
         assert!(result.is_err());
