@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      # Note: For production, use secrets management or env_file directive
+      - DATABASE_URL=postgresql://$${DB_USER:-apiuser}:$${DB_PASS:-default123}@db:5432/rust_basic_api
+      - SERVER_PORT=3000
+      - RUST_LOG=rust_basic_api=info,tower_http=debug
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      # Note: For production, use Docker secrets or external secret management
+      - POSTGRES_USER=$${DB_USER:-apiuser}
+      - POSTGRES_PASSWORD=$${DB_PASS:-default123}
+      - POSTGRES_DB=rust_basic_api
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${DB_USER:-apiuser}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+volumes:
+  postgres-data:
+
+networks:
+  app-network:
+    driver: bridge

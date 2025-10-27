@@ -1,0 +1,5 @@
+# Ignore example configuration files with placeholder credentials
+.env.example:*
+docker-compose.yml:*
+README.md:*
+src/config.rs:*
