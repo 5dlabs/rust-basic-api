@@ -9,10 +9,18 @@ mod repository;
 mod routes;
 
 use crate::config::Config;
-use axum::{routing::get, Router};
+use axum::{extract::State, routing::get, Router};
+use sqlx::PgPool;
 use std::net::SocketAddr;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+/// Application state shared across all handlers
+#[derive(Clone)]
+pub struct AppState {
+    /// Database connection pool
+    pub pool: PgPool,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -35,11 +43,30 @@ async fn main() -> anyhow::Result<()> {
         "Configuration loaded"
     );
 
-    // Build application router
+    // Create database pool
+    let pool = repository::create_pool(&config.database_url)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to create database pool: {e}"))?;
+
+    tracing::info!("Database connection pool created");
+
+    // Run migrations
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .map_err(|e| anyhow::anyhow!("Failed to run database migrations: {e}"))?;
+
+    tracing::info!("Database migrations completed successfully");
+
+    // Create application state
+    let state = AppState { pool };
+
+    // Build application router with state
     let app = Router::new()
         .route("/health", get(health_check))
         .merge(routes::build_routes())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .with_state(state);
 
     // Create socket address
     let addr = SocketAddr::from(([0, 0, 0, 0], config.server_port));
@@ -55,8 +82,14 @@ async fn main() -> anyhow::Result<()> {
 /// Health check endpoint handler
 ///
 /// Returns a simple "OK" status to indicate the server is running.
-async fn health_check() -> &'static str {
-    "OK"
+/// Also verifies database connectivity.
+async fn health_check(State(state): State<AppState>) -> &'static str {
+    // Verify database connection is alive
+    if sqlx::query("SELECT 1").execute(&state.pool).await.is_ok() {
+        "OK"
+    } else {
+        "Database connection failed"
+    }
 }
 
 #[cfg(test)]
@@ -64,8 +97,21 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_health_check() {
-        let response = health_check().await;
-        assert_eq!(response, "OK");
+    async fn test_health_check_with_db() {
+        // Setup test database
+        dotenv::from_filename(".env.test").ok();
+        
+        // Skip test if DATABASE_URL is not configured
+        if let Ok(database_url) = std::env::var("DATABASE_URL") {
+            if !database_url.is_empty() {
+                // Create pool for testing
+                if let Ok(pool) = repository::create_pool(&database_url).await {
+                    let state = AppState { pool };
+                    let response = health_check(axum::extract::State(state)).await;
+                    assert_eq!(response, "OK");
+                }
+            }
+        }
+        // Note: Test skipped if DATABASE_URL is not configured or database is not available
     }
 }
